@@ -1,0 +1,177 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreference
+        app:defaultValue="true"
+        app:key="pref_bLogLocally"
+        app:title="Log locally"
+        android:hint="Write cellular measurements to campaignName_log.txt under the logs folder."/>
+
+    <SwitchPreference
+        app:defaultValue="true"
+        app:key="pref_bForceModemRefresh"
+        app:title="Force modem refresh"
+        android:hint="Force the device modem to re-calculate its cellular data periodically."/>
+
+    <SwitchPreference
+        app:defaultValue="false"
+        app:key="pref_bLogGPS"
+        app:title="Log GPS"
+        android:hint="Write GPS information to campaignName_locations.txt under the logs folder."/>
+
+    <SwitchPreference
+        app:defaultValue="false"
+        app:key="pref_bStreamMeasurements"
+        app:title="Stream to compute node"
+        android:hint="Stream measurements to the compute node, using TCP over USB."/>
+
+    <SwitchPreference
+        app:defaultValue="false"
+        app:key="pref_bDebug"
+        app:title="Debug"
+        android:hint="Write exceptions and commands received from the compute node to campaignName_debug.txt under the logs folder."/>
+
+    <EditTextPreference
+        app:key="pref_iLogInterval"
+        app:title="Measurement interval (milliseconds)"
+        app:defaultValue="1000"
+        android:numeric="decimal"
+        android:inputType="numberDecimal"
+        android:digits="0123456789"
+        app:useSimpleSummaryProvider="true"
+        android:hint="Interval, in milliseconds, at which cellular and GPS measurements are periodically captured, logged, and streamed."/>
+
+    <EditTextPreference
+        app:key="pref_iModemRefreshInterval"
+        app:title="Modem refresh interval (milliseconds)"
+        app:defaultValue="1000"
+        android:numeric="decimal"
+        android:inputType="numberDecimal"
+        android:digits="0123456789"
+        app:useSimpleSummaryProvider="true"
+        android:hint="Interval, in milliseconds, at which device model is periodically forced to re-calculate its cellular data"/>
+
+    <EditTextPreference
+        app:key="pref_iUIRefreshInterval"
+        app:title="UI refresh interval (milliseconds)"
+        app:defaultValue="1000"
+        android:numeric="decimal"
+        android:inputType="numberDecimal"
+        android:digits="0123456789"
+        app:useSimpleSummaryProvider="true"
+        android:hint="Interval, in milliseconds, at which the displayed cellular measurements are periodically refreshed."/>
+
+<!--    <PreferenceCategory-->
+<!--        app:key="LTE"-->
+<!--        app:title="4G LTE Measurements">-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_dBm"-->
+<!--            app:title="Signal strength in dBm"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_RSRP"-->
+<!--            app:title="RSRP"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_RSRQ"-->
+<!--            app:title="RSRQ"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_RSSI"-->
+<!--            app:title="RSSI"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_CQI"-->
+<!--            app:title="CQI"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_EARFCN"-->
+<!--            app:title="EARFCN"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_ASU"-->
+<!--            app:title="RSRP in ASU"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_PCI"-->
+<!--            app:title="Physical cell ID (PCI)"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_CI"-->
+<!--            app:title="Cell identity"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_LTE_TA"-->
+<!--            app:title="Timing advance"/>-->
+
+<!--    </PreferenceCategory>-->
+
+<!--    <PreferenceCategory-->
+<!--        app:key="5G"-->
+<!--        app:title="5G NR Measurements">-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_dBm"-->
+<!--            app:title="Signal strength in dBm"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_RSRP"-->
+<!--            app:title="RSRP"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_RSRQ"-->
+<!--            app:title="RSRQ"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_RSSI"-->
+<!--            app:title="RSSI"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_SINR"-->
+<!--            app:title="SINR"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_ASU"-->
+<!--            app:title="RSRP in ASU"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_PCI"-->
+<!--            app:title="Physical cell ID (PCI)"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_NCI"-->
+<!--            app:title="New radio cell ID (NCI)"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_NRAFCN"-->
+<!--            app:title="NRAFCN"/>-->
+
+<!--        <SwitchPreference-->
+<!--            app:defaultValue="true"-->
+<!--            app:key="pref_b_NR_TAC"-->
+<!--            app:title="Tracking area code"/>-->
+
+<!--    </PreferenceCategory>-->
+
+
+</PreferenceScreen>
