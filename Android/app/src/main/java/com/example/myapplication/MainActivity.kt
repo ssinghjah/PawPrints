@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
     private var mDebugLogFile = System.currentTimeMillis().toString();
     private var mIsRunning = false;
     private var mExpStartElapsedNanoSec: Long = -1;
+    private var mMeasurementSocket = Socket();
 
     // Permissions
     private var mStorageWritePermission = false;
@@ -56,10 +57,12 @@ class MainActivity : AppCompatActivity(), MessageListener {
     private fun streamToComputeNode(messageString: String){
         try
         {
-            val measurementSocket = Socket(COMPUTE_NODE_IP, MEASUREMENT_PORT)
-            measurementSocket.outputStream?.write(messageString.toByteArray())
-            measurementSocket?.outputStream?.flush()
-            measurementSocket.close()
+            if(!this.mMeasurementSocket.isConnected())
+            {
+                this.mMeasurementSocket = Socket(COMPUTE_NODE_IP, MEASUREMENT_PORT)
+            }
+            this.mMeasurementSocket.outputStream?.write(messageString.toByteArray())
+            this.mMeasurementSocket.outputStream?.flush()
         }
         catch(t:Throwable)
         {
@@ -172,11 +175,19 @@ class MainActivity : AppCompatActivity(), MessageListener {
 
                           if (SettingsHandler.LogLocally)
                           {
-                              mLogHandler.appendToMeasurements(mStorageWritePermission, mMeasurementCampaignName, csvLog)
+                              thread {
+                                  mLogHandler.appendToMeasurements(
+                                      mStorageWritePermission,
+                                      mMeasurementCampaignName,
+                                      csvLog
+                                  )
+                              }
                           }
                           if (SettingsHandler.StreamToComputeNode)
                           {
-                              streamToComputeNode(mMeasurementCampaignName + LOG_START_DELIM + csvLog)
+                              thread {
+                                  streamToComputeNode(mMeasurementCampaignName + LOG_START_DELIM + csvLog)
+                              }
                           }
                     }
                     catch(t: Throwable)
@@ -332,6 +343,10 @@ class MainActivity : AppCompatActivity(), MessageListener {
             val textView: TextView = findViewById(R.id.textView)
             textView.text = "Measurement Log:"
         })
+        if(this.mMeasurementSocket != null)
+        {
+            this.mMeasurementSocket.close()
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -378,7 +393,12 @@ class MainActivity : AppCompatActivity(), MessageListener {
     override fun onConnectFailed() {
     }
 
-    override fun onClose() {
+    override fun onClose()
+    {
+        if(this.mMeasurementSocket != null)
+        {
+            this.mMeasurementSocket.close()
+        }
     }
 
     override fun onMessage(text: String?) {

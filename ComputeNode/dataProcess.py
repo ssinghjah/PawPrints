@@ -30,6 +30,9 @@ def start():
                     CSV_NAME =  data.split(EXPERIMENT_NAME_DELIM,1)[0]
                     log = data.split(EXPERIMENT_NAME_DELIM,1)[1]
                     log = log + "," + str(time.time())
+                    if not os.path.exists(LOG_FOLDER):
+                        os.makedirs(LOG_FOLDER)
+                        
                     with open(LOG_FOLDER + "/" + CSV_NAME + ".csv", "a") as file_object:
                         file_object.write(log + "\n")
               
