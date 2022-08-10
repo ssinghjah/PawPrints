@@ -1,6 +1,6 @@
 <h2>PawPrints, The AERPAW Cellular Logger</h2>
 
-Development effort for this app is supported in part by the NSF award CNS-1939334 (AERPAW).
+Development effort for this app is supported in part by the NSF award CNS-1939334 (AERPAW). The approach for calculating 5G NSA signal strength measurements is derived from <cite><a target="_blank" href="https://people.cs.uchicago.edu/~muhiqbalcr/sigcap/">Sigcap</a></cite>, developed by Muhammad Iqbal Rochman. Thanks to the Muhammad for sharing the source code.
 
 <div id="content">
 <ol>
@@ -535,7 +535,7 @@ Development effort for this app is supported in part by the NSF award CNS-193933
                     <li>APIs<p> The Android App relies on the below two APIs to collect cellular information:
                         <li><code><a target="_blank" href="https://developer.android.com/reference/kotlin/android/telephony/TelephonyManager#getallcellinfo">getAllCellInfo</a></code>: This API is a member function of the TelephonyManager class and requires the device to support API versions 17 and above. The API returns a list of objects containing cellular measurements for each detected base station. The class of each object in the returned list indicates the cellular technology of that base station. The app supports parsing objects belonging to classes that contain 4G LTE and 5G NR information. However, the device must support a minimum API level of 29 to obtain 5G NR information. Further, 5G NR information is returned only if the base station is a 5G NR standalone (SA) base station. If the base station is of type 5G NR non-standalone (NSA), then the below API must be used. 5G NR NSA base stations use 4G LTE for the control plane and 5G NR for user data.</li>
                             <li><code><a target="_blank" href="https://developer.android.com/reference/kotlin/android/telephony/TelephonyManager#getsignalstrength">getSignalStrength</a></code>: This API is also a member function of the TelephonyManager class and and requires the device to support API versions 28 and above. The API returns a list of objects containing the signal strength measurements of the base station the device is connected to. For 5G NR NSA base stations, the API returns both LTE and 5G NR signal strength information. For 5G SA base stations, the API returns only 5G NR signal strength information, and for LTE base stations, the API returns only LTE signal strength information.</li>
-                            <br>This approach is derived from that followed by <cite><a target="_blank" href="https://people.cs.uchicago.edu/~muhiqbalcr/sigcap/">Sigcap</a></cite>, developed by Muhammad Iqbal Rochman. Thanks to the Muhammad for sharing the source code.
+                            <br>
                         </p>
                         </li>
                     <li>Logs<p>The app can display and log 4G LTE and 5G NR measurements, as obtained from the above two APIs. Each measurements has a minimum required API level, which must be supported by the device. The app logs measurements for all observed base stations, besides the one that the device is connected to. The logging interval is configurable.
