@@ -1,4 +1,4 @@
-<h2>PawPrints, The AERPAW Cellular Logger<h2>
+<h2>PawPrints, The AERPAW Cellular Logger</h2>
 
 Development effort for this app is supported in part by the NSF award CNS-1939334 (AERPAW).
 
