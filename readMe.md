@@ -545,7 +545,6 @@
                         The log format of the cellular measurements, at the android app, is specified in Tables 3-5. Information of all detected base stations is included. This log is named  "<code>campaignName</code>_log.txt".
                         </br></br>
                         GPS information is captured in another log, named "<code>campaignName</code>_locations.txt".  Its format is specified in Table 6.</p></li>
-
                         <li>Threads <p>The app may launch upto three threads, each of which runs in a loop periodically, after their respective time intervals, as per the configured settings. These three threads are as follows:
                             <ul>
                                 <li>Log and stream measurements: This thread saves cellular measurements locally to a .csv file, if configured to do so, and streams measurements to the compute node over UDP and USB at the specified port, if configured to do so. The interval at which this thread loops (and hence, the rate at which the app logs and streams measurements) can be configured.</li>
