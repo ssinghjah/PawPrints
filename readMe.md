@@ -611,7 +611,6 @@ Development effort for this app is supported in part by the NSF award CNS-193933
                         </li>
                     </ul>
                     </li>
-               
             <li>Compute Node
                 <p>
                     The compute node contains two scripts:
