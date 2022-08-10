@@ -611,7 +611,7 @@ Development effort for this app is supported in part by the NSF award CNS-193933
                         </li>
                     </ul>
                     </li>
-                    </ul>
+               
             <li>Compute Node
                 <p>
                     The compute node contains two scripts:
@@ -622,6 +622,7 @@ Development effort for this app is supported in part by the NSF award CNS-193933
                     <li>
                         <code>dataProcess.py</code> is a python script, which listens at the <code>measurementPort</code> for measurements from the app, and logs the same locally to a .csv file.
                     </li>
+                </ul>
                 </ul>
     <li><strong>Future Work</strong>
     <ol>
