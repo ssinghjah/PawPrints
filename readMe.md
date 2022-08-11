@@ -1,6 +1,7 @@
 <h2>PawPrints, The AERPAW Cellular Logger</h2>
 
-Development effort for this app is supported in part by the NSF award CNS-1939334 (AERPAW). The approach for calculating 5G NSA signal strength measurements is derived from <cite><a target="_blank" href="https://people.cs.uchicago.edu/~muhiqbalcr/sigcap/">Sigcap</a></cite>, developed by Muhammad Iqbal Rochman. Thanks to the Muhammad for sharing the source code.
+Development effort for this app is supported in part by the NSF award CNS-1939334 (AERPAW). 
+<br><br>The approach for calculating 5G NSA signal strength measurements is derived from <cite><a target="_blank" href="https://people.cs.uchicago.edu/~muhiqbalcr/sigcap/">Sigcap</a></cite>, developed by Muhammad Iqbal Rochman. Thanks to the Muhammad for sharing the source code.
 
 <div id="content">
 <ol>
