@@ -639,6 +639,9 @@ Development effort for this app is supported in part by the NSF award CNS-193933
             Display information of neighbouring cells in the Android UI. These are only logged locally and streamed to the compute node as of now.
         </li>
         <li>
+            Display build version or build date in the app.
+        </li>
+        <li>
             Allow the <code>remoteAndroidControl</code> script to reset all settings to default.
         </li>
         <li>
