@@ -258,7 +258,27 @@ class MainActivity : AppCompatActivity(), MessageListener {
     @RequiresApi(Build.VERSION_CODES.N)
     private fun logLocation()
     {
+        if(!mIsRunning){
+            return
+        }
         var fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
         fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, object :CancellationToken(){
             override fun onCanceledRequested(p0: OnTokenCanceledListener) = CancellationTokenSource().token
 
@@ -272,9 +292,11 @@ class MainActivity : AppCompatActivity(), MessageListener {
                 val nowElapsed = (SystemClock.elapsedRealtimeNanos() - mExpStartElapsedNanoSec)/Math.pow(10.0, 9.0)
                 val gpsLog = GPS_LOG_START_MARKER + ","  + nowElapsed.toString() +  "," + fixElapsedNanoSec.toString() + "," + location.latitude.toString() + "," + location.longitude.toString() + "," + location.altitude.toString() + "," +  location.accuracy.toString() + "," + GPS_LOG_STOP_MARKER
                 mLogHandler.appendToLocation(mStorageWritePermission, mMeasurementCampaignName, gpsLog)
-                if (SettingsHandler.StreamToComputeNode)
-                {
-                    streamToComputeNode(mMeasurementCampaignName + LOG_START_DELIM + gpsLog)
+                streamToComputeNode(mMeasurementCampaignName + "_GPS" + LOG_START_DELIM + gpsLog)
+                if (SettingsHandler.StreamToComputeNode) {
+                    thread {
+                        streamToComputeNode(mMeasurementCampaignName + "_GPS" + LOG_START_DELIM + gpsLog)
+                    }
                 }
             }
         }
