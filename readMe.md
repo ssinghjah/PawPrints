@@ -1,43 +1,8 @@
-<style>
-body{
-height:1000px}
+<h2>PawPrints, The AERPAW Cellular Logger</h2>
 
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-  width: 100%;
-  border: 1px solid #ddd;
-  margin-bottom: 30px;
-  margin-top: 30px;
-}
-overflow: visible;
-th, td {
-  padding: 15px;
-}
+Development effort for this app is supported in part by the NSF award CNS-1939334 (AERPAW). 
+<br><br>The approach for calculating 5G NSA signal strength measurements is derived from <cite><a target="_blank" href="https://people.cs.uchicago.edu/~muhiqbalcr/sigcap/">Sigcap</a></cite>, developed by Muhammad Iqbal Rochman. Thanks to Muhammad for sharing the source code.
 
-caption{
-    text-align: left;
-}
-a{
-
-}
-td{
-  padding: 15px;
-   text-align: left;
-
-}
-
-th{
-text-align: left;
-padding: 15px;
-}
-#content{
- height:auto;
- overflow:visible;
-}
-
-tr:nth-child(even){background-color: #f2f2f2}
-</style>
 <div id="content">
 <ol>
     <li><strong>Overview</strong>
@@ -571,7 +536,7 @@ tr:nth-child(even){background-color: #f2f2f2}
                     <li>APIs<p> The Android App relies on the below two APIs to collect cellular information:
                         <li><code><a target="_blank" href="https://developer.android.com/reference/kotlin/android/telephony/TelephonyManager#getallcellinfo">getAllCellInfo</a></code>: This API is a member function of the TelephonyManager class and requires the device to support API versions 17 and above. The API returns a list of objects containing cellular measurements for each detected base station. The class of each object in the returned list indicates the cellular technology of that base station. The app supports parsing objects belonging to classes that contain 4G LTE and 5G NR information. However, the device must support a minimum API level of 29 to obtain 5G NR information. Further, 5G NR information is returned only if the base station is a 5G NR standalone (SA) base station. If the base station is of type 5G NR non-standalone (NSA), then the below API must be used. 5G NR NSA base stations use 4G LTE for the control plane and 5G NR for user data.</li>
                             <li><code><a target="_blank" href="https://developer.android.com/reference/kotlin/android/telephony/TelephonyManager#getsignalstrength">getSignalStrength</a></code>: This API is also a member function of the TelephonyManager class and and requires the device to support API versions 28 and above. The API returns a list of objects containing the signal strength measurements of the base station the device is connected to. For 5G NR NSA base stations, the API returns both LTE and 5G NR signal strength information. For 5G SA base stations, the API returns only 5G NR signal strength information, and for LTE base stations, the API returns only LTE signal strength information.</li>
-                            <br>This approach is derived from that followed by <cite><a target="_blank" href="https://people.cs.uchicago.edu/~muhiqbalcr/sigcap/">Sigcap</a></cite>, developed by Muhammad Iqbal Rochman. Thanks to the Muhammad for sharing the source code.
+                            <br>
                         </p>
                         </li>
                     <li>Logs<p>The app can display and log 4G LTE and 5G NR measurements, as obtained from the above two APIs. Each measurements has a minimum required API level, which must be supported by the device. The app logs measurements for all observed base stations, besides the one that the device is connected to. The logging interval is configurable.
@@ -585,7 +550,6 @@ tr:nth-child(even){background-color: #f2f2f2}
                         The log format of the cellular measurements, at the android app, is specified in Tables 3-5. Information of all detected base stations is included. This log is named  "<code>campaignName</code>_log.txt".
                         </br></br>
                         GPS information is captured in another log, named "<code>campaignName</code>_locations.txt".  Its format is specified in Table 6.</p></li>
-
                         <li>Threads <p>The app may launch upto three threads, each of which runs in a loop periodically, after their respective time intervals, as per the configured settings. These three threads are as follows:
                             <ul>
                                 <li>Log and stream measurements: This thread saves cellular measurements locally to a .csv file, if configured to do so, and streams measurements to the compute node over UDP and USB at the specified port, if configured to do so. The interval at which this thread loops (and hence, the rate at which the app logs and streams measurements) can be configured.</li>
@@ -648,7 +612,6 @@ tr:nth-child(even){background-color: #f2f2f2}
                         </li>
                     </ul>
                     </li>
-                    </ul>
             <li>Compute Node
                 <p>
                     The compute node contains two scripts:
@@ -659,6 +622,7 @@ tr:nth-child(even){background-color: #f2f2f2}
                     <li>
                         <code>dataProcess.py</code> is a python script, which listens at the <code>measurementPort</code> for measurements from the app, and logs the same locally to a .csv file.
                     </li>
+                </ul>
                 </ul>
     <li><strong>Future Work</strong>
     <ol>
@@ -673,6 +637,9 @@ tr:nth-child(even){background-color: #f2f2f2}
         </li>
         <li>
             Display information of neighbouring cells in the Android UI. These are only logged locally and streamed to the compute node as of now.
+        </li>
+        <li>
+            Display build version or build date in the app.
         </li>
         <li>
             Allow the <code>remoteAndroidControl</code> script to reset all settings to default.
