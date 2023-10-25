@@ -1,5 +1,8 @@
+import numpy as np
+
 import common
 import simplekml
+import custom_color_maps
 
 LOG_FOLDER = "../Data/"
 BS_PCI = "connected_bs"
@@ -16,7 +19,7 @@ LON_INDEX = 1
 LAT_INDEX = 2
 ALTITUDE_INDEX = 3
 
-LINE_WIDTH = 3
+LINE_WIDTH = 7
 
 kpi_log = common.read_csv(KPI_LOG_PATH)
 gps_coords = common.read_csv(GPS_COORDS_LOG_PATH)
@@ -41,13 +44,16 @@ kpi_max = max(kpi_log)
 for index in range(numEntries-1):
     kpi_index = kpi_indices[index]
     gps_index = gps_indices[index]
-    kpi = kpi_log[kpi_index]
+    pci = kpi_log[kpi_index]
     gps_coord = gps_coords[gps_index]
     gps_next_coord = gps_coords[gps_index+1]
     line = kml.newlinestring(coords=[(gps_coord[LON_INDEX], gps_coord[LAT_INDEX], gps_coord[ALTITUDE_INDEX]),(gps_next_coord[LON_INDEX], gps_next_coord[LAT_INDEX], gps_next_coord[ALTITUDE_INDEX])])
     line.altitudemode = simplekml.AltitudeMode.relativetoground
-    color = common.value_to_color(kpi, kpi_min, kpi_max)
-    kml_color = simplekml.Color.rgb(round(color["r"]*255), round(color["g"]*255), round(color["b"]*255))
+    # color = common.value_to_color(kpi, kpi_min, kpi_max)
+    color = bs_colors.get_color(pci)
+    color = common.hex_to_rgb(bs_colors.get_color(pci))
+    # color = color_map[pci]
+    kml_color = simplekml.Color.rgb(round(color["r"]*255.0), round(color["g"]*255.0), round(color["b"]*255.0))
     line.style.linestyle.color = kml_color
     line.style.linestyle.width = LINE_WIDTH
 

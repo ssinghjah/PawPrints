@@ -1,4 +1,6 @@
 import csv
+import settings
+import enums
 def write_csv(fName, values):
     with open(fName, 'w') as f:
         csv_writer = csv.writer(f)
@@ -35,15 +37,35 @@ def read_csv(csv_path):
                 rows.append(try_float_convert(row[0]))
     return rows
 
+
+def hex_to_rgb(hex):
+    rgb = []
+    for i in (1, 3, 5):
+        decimal = int(hex[i:i + 2], 16)/255.0
+        rgb.append(decimal)
+
+    return {"r":rgb[0], "g":rgb[1], "b":rgb[2]}
+
+def generate_discrete_color_map(values):
+    num_values = len(values)
+    colors = {}
+    for i in range(num_values):
+        colors[values[i]] = value_to_color(i+1, 1, num_values)
+    return colors
+
+def generate_discrete_colors(num_colors):
+    colors = []
+    for i in range(num_colors):
+        colors.append(value_to_color(i+1, 1, num_colors))
+    return colors
+
 # r,g,b range is from 0-1
 def rgb_to_kml_hex(rgb_dict):
     hex = 'ff{:02x}{:02x}{:02x}'.format(int(rgb_dict["b"]*255.0), int(rgb_dict["g"]*255.0), int(rgb_dict["r"]*255.0))
     return hex
-
 def rgb_to_hex(rgb_dict):
     hex = '#{:02x}{:02x}{:02x}ff'.format(int(rgb_dict["r"] * 255.0), int(rgb_dict["g"] * 255.0), int(rgb_dict["b"] * 255.0))
     return hex
-
 def try_float_convert(string_input):
     if string_input.isdigit():
         return int(string_input)
@@ -53,7 +75,6 @@ def try_float_convert(string_input):
             return float_string
         except ValueError:
             return string_input
-
 def value_to_color(v, vmin, vmax):
     color = {"r": 1.0, "g": 1.0, "b":1.0} # r,g,b
     if (v < vmin):
@@ -74,3 +95,22 @@ def value_to_color(v, vmin, vmax):
         color["g"] = 1 + 4 * (vmin + 0.75 * dv - v) /dv
         color["b"] = 0
     return color
+
+
+def rsrp_to_quality(rsrp):
+    if rsrp >= settings.RSRP_GOOD_THRESH:
+        rsrp_quality = enums.SIG_QUALITY.GOOD
+    elif rsrp >= settings.RSRP_ACCEPTABLE_THRESH:
+        rsrp_quality = enums.SIG_QUALITY.ACCEPTABLE
+    else:
+        rsrp_quality = enums.SIG_QUALITY.POOR
+    return rsrp_quality
+
+def rsrq_to_quality(rsrq):
+    if rsrq >= settings.RSRQ_GOOD_THRESH:
+        rsrq_quality = enums.SIG_QUALITY.GOOD
+    elif rsrq >= settings.RSRQ_ACCEPTABLE_THRESH:
+        rsrq_quality = enums.SIG_QUALITY.ACCEPTABLE
+    else:
+        rsrq_quality = enums.SIG_QUALITY.POOR
+    return rsrq_quality

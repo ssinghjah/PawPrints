@@ -2,7 +2,7 @@ import json, common
 import math
 
 LOG_FOLDER = "../Data/"
-BS = "connected_bs"
+BS = "pawprints"
 GPS = "gps"
 TIME_LOG_SUFFIX = "_abs_time.csv"
 METADATA_FOLDER = "./metadata.json"

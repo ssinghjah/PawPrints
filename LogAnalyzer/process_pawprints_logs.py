@@ -74,6 +74,15 @@ def initialize_bs_info(bs_info):
     bs_info["ci"] = []
     bs_info["asu"] = []
 
+
+def analyze_rsrp_rsrq_quality(connected_bs_info):
+    num_entries = len(connected_bs_info["rsrq"])
+    for entry_index in range(num_entries):
+        rsrq = connected_bs_info["rsrq"]
+        rsrp = connected_bs_info["rsrp"]
+
+
+
 def append_to_bs_info(bs_info, log_entries, iter_index, abs_time):
     bs_info["sig_strength"].append(log_entries[iter_index + SIG_STRENGTH_INDEX])
     bs_info["rsrp"].append(log_entries[iter_index + RSRP_INDEX])
@@ -120,6 +129,7 @@ def process_log():
     num_seen_bs = []
     abs_times = []
     connected_bs_info["pci"] = []
+    handover_count = 0
     with open(PAWPRINTS_LOG_PATH) as f:
         log_rows = f.readlines()
         for log_row in log_rows:
@@ -134,12 +144,15 @@ def process_log():
                     iter_index = process_BS_log(abs_time, log_entries, iter_index, per_bs_measurements, connected_bs_info)
                 else:
                     iter_index += 1
+            if len(connected_bs_info["pci"]) > 1 and (connected_bs_info["pci"][-1] != connected_bs_info["pci"][-2]):
+                handover_count += 1
 
     write_per_bs_measurements(per_bs_measurements)
     write_connected_cell_info(connected_bs_info)
     write_total_seen_time(per_bs_measurements)
     common.write_csv(LOG_FOLDER + "num_seen_bs.csv", num_seen_bs)
     common.write_csv(LOG_FOLDER + "pawprints_abs_time.csv", abs_times)
+    print(handover_count)
 
 process_log()
 

@@ -1,0 +1,5 @@
+- connected bs indices should be initialized to -1 for each pawprints entry
+- interpolate per bs indices
+- number of handovers
+- Split into four regions, based on RSRP and RSRQ
+- Write time step in settings
