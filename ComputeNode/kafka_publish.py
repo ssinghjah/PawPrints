@@ -4,29 +4,33 @@ from threading import Thread
 import sys
 from time import sleep
 
-BROKER = "35.171.54.199"
+BROKER = "127.0.0.1"
 TOPIC = "sampleTopic"
 
-configuration = {'bootstrap.servers':BROKER}
 
 def delivery_callback(err, msg):
     if err:
         sys.stderr.write('%% Message failed delivery: %s\n' % err)
     else:
-        sys.stderr.write('%% Message delivered to %s [%d] @ %d\n' %
+        sys.stdout.write('%% Message delivered to %s [%d] @ %d\n' %
                             (msg.topic(), msg.partition(), msg.offset()))
 
-def run_kafka_producer(msg_queue):
-    p = Producer(**configuration)
+def connect_to_broker():
+    configuration = {'bootstrap.servers':BROKER}
+    kafka_producer = Producer(**configuration)
     print("Kafka producer connected to Broker")
+    return kafka_producer
+
+def publish_loop(msg_queue):
+    producer = connect_to_broker()
     while True:
         try:   
             msg = msg_queue.get()     
-            p.produce(TOPIC, msg, callback = delivery_callback)
+            producer.produce(TOPIC, msg, callback = delivery_callback)
         except Exception as e:
             sys.stderr.write("Error: " + str(e))
         finally:    
-            p.flush()
+            producer.flush()
 
 def dummy_msg_producer(msg_queue):
         counter = 0
