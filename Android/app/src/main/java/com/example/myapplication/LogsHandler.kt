@@ -20,6 +20,19 @@ class LogsHandler(logFolder:String)
         file.appendText(toAppend + "\n")
     }
 
+    public fun appendToSummary(storagePermission:Boolean, campaignName:String, toAppend:String)
+    {
+        if(!storagePermission)
+        {
+            return
+        }
+        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+        val folderName = File(path, mlogFolder)
+        folderName.mkdirs()
+        val file = File(folderName, campaignName + "_summary.txt")
+        file.appendText(toAppend + "\n")
+    }
+
     public fun appendToLocation(storagePermission:Boolean, campaignName:String, toAppend:String)
     {
         if(!storagePermission)

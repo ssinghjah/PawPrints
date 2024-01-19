@@ -18,8 +18,6 @@ class SettingsActivity : AppCompatActivity() {
                     .commit()
             }
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-
         }
         catch (t:Throwable){
         }

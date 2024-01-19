@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.telephony.TelephonyManager
+import org.json.JSONObject
 
 class GeneralConnectionInfo(telephonyManager: TelephonyManager) {
     private val networkOperatorName:String
@@ -48,6 +49,14 @@ class GeneralConnectionInfo(telephonyManager: TelephonyManager) {
         csvString += this.simOperatorName + ","
         csvString += this.simCarrierIdName
         return csvString
+    }
+
+    public fun toJSONObj(): JSONObject{
+        val jsonObject = JSONObject()
+        jsonObject.put("network_operator",this.networkOperatorName)
+        jsonObject.put("sim_operator", this.simOperatorName)
+        jsonObject.put("sim_carrier_id", this.simCarrierIdName)
+        return jsonObject
     }
 
     public fun toDisplayString(): String{

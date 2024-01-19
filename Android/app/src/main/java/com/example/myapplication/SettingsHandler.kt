@@ -17,6 +17,7 @@ object SettingsHandler{
     var ModemRefreshInterval:Long = 1000
     var UIRefreshInterval:Long = 1000
     var LogLocally:Boolean = true
+    var Device_Name:String = ""
     var LogGPS:Boolean = true
     var StreamToComputeNode:Boolean = false
     var Debug:Boolean = false
@@ -100,6 +101,7 @@ object SettingsHandler{
         StreamToComputeNode = sp.getBoolean("pref_bStreamMeasurements", true)
         LogGPS = sp.getBoolean("pref_bLogGPS", false)
         Debug = sp.getBoolean("pref_bDebug", false)
+        Device_Name = sp.getString("pref_sDeviceName", "").toString()
        try
        {
             LogInterval = sp.getString("pref_iLogInterval", "1000")!!.toLong()

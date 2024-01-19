@@ -6,6 +6,7 @@ import android.telephony.CellInfo
 import android.telephony.CellInfoNr
 import android.telephony.CellSignalStrengthNr
 import androidx.annotation.RequiresApi
+import org.json.JSONObject
 
 class NRInfo(cellInfo: CellInfoNr, refTime: Long) {
     var bConnected: String
@@ -150,6 +151,32 @@ class NRInfo(cellInfo: CellInfoNr, refTime: Long) {
                 + Constants.BS_INFO_STOP_MARKER)
         return csvString
     }
+
+    public fun toJSON(): JSONObject{
+        val jsonObject = JSONObject()
+
+        // Add key-value pairs to the JSON object
+        jsonObject.put("technology", Constants.NR_5G_SA_LOG_STRING)
+        jsonObject.put("dbm", this.dbm)
+        jsonObject.put("csi_rsrp", this.csi_rsrp)
+        jsonObject.put("csi_rsrq", this.csi_rsrq)
+        jsonObject.put("csi_sinr", this.csi_sinr)
+        jsonObject.put("ss_rsrp", this.ss_rsrp)
+        jsonObject.put("ss_rsrq", this.ss_rsrq)
+        jsonObject.put("ss_sinr", this.ss_sinr)
+        jsonObject.put("level", this.level)
+        jsonObject.put("asu", this.asu)
+        jsonObject.put("nci", this.nci)
+        jsonObject.put("pci", this.pci)
+        jsonObject.put("tac", this.tac)
+        jsonObject.put("bands", this.bands)
+        jsonObject.put("bands", this.bands)
+        jsonObject.put("mcc", this.mcc)
+        jsonObject.put("mnc", this.mnc)
+
+        return jsonObject
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.N)
     public fun toDisplayString(): String{

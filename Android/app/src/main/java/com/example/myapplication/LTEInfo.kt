@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.telephony.CellInfo
 import android.telephony.CellInfoLte
 import androidx.annotation.RequiresApi
+import org.json.JSONObject
 
 @RequiresApi(Build.VERSION_CODES.Q)
 class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
@@ -186,8 +187,34 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         return csvString
     }
 
+    public fun toJSON(): JSONObject{
+        val jsonObject = JSONObject()
+
+        // Add key-value pairs to the JSON object
+        jsonObject.put("technology", Constants.LTE_4G_LOG_STRING)
+        jsonObject.put("dbm", this.dbm)
+        jsonObject.put("rssnr", this.rssnr)
+        jsonObject.put("rsrp", this.rsrp)
+        jsonObject.put("rsrq", this.rsrq)
+        jsonObject.put("rssi", this.rssi)
+        jsonObject.put("cqi", this.cqi)
+        jsonObject.put("asu", this.asu)
+        jsonObject.put("earfcn", this.earfcn)
+        jsonObject.put("pci", this.pci)
+        jsonObject.put("ta", this.ta)
+        jsonObject.put("ci", this.cellIdentity)
+        jsonObject.put("tac", this.tac)
+        jsonObject.put("bandwidth", this.bandwidth)
+        // jsonObject.put("bands", this.bands)
+        jsonObject.put("mcc", this.mcc)
+        jsonObject.put("mnc", this.mnc)
+
+        return jsonObject
+    }
+
     @RequiresApi(Build.VERSION_CODES.N)
-    public fun toDisplayString(): String{
+    public fun toDisplayString(): String
+    {
         var displayString = "\ndBm = " + this.dbm
         displayString += "\nRSSNR = " + this.rssnr
         displayString += "\nRSRP = " + this.rsrp

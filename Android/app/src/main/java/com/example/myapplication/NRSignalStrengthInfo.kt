@@ -6,9 +6,10 @@ import android.telephony.CellSignalStrengthLte
 import android.telephony.CellSignalStrengthNr
 import android.telephony.SignalStrength
 import androidx.annotation.RequiresApi
+import org.json.JSONObject
 
 class NRSignalStrengthInfo(signalStrength: SignalStrength?) {
-    var nrType:String  = ""
+    var nrType: String = ""
     private var csi_rsrp: String = ""
     private var csi_rsrq: String = ""
     private var csi_sinr: String = ""
@@ -21,74 +22,61 @@ class NRSignalStrengthInfo(signalStrength: SignalStrength?) {
     private var dbm: String = ""
     private var level: String = ""
 
-    init{
-        if (signalStrength != null)
-        {
+    init {
+        if (signalStrength != null) {
             val lteSS = signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)
             val nrSS = signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
             signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
-            if (nrSS.isNotEmpty() && lteSS.isNotEmpty())
-            {
+            if (nrSS.isNotEmpty() && lteSS.isNotEmpty()) {
                 this.nrType = Constants.NR_5G_NSA_LOG_STRING
-            }
-            else if (nrSS.isNotEmpty() && lteSS.isEmpty())
-            {
+            } else if (nrSS.isNotEmpty() && lteSS.isEmpty()) {
                 this.nrType = Constants.NR_5G_SA_LOG_STRING
             }
-            if(nrSS.isNotEmpty())
-            {
+            if (nrSS.isNotEmpty()) {
                 this.csi_rsrp = nrSS[0].csiRsrp.toString()
-                if(nrSS[0].csiRsrp == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].csiRsrp == CellInfo.UNAVAILABLE) {
                     this.csi_rsrp = "Unavailable"
                 }
                 this.csi_rsrq = nrSS[0].csiRsrq.toString()
-                if(nrSS[0].csiRsrq == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].csiRsrq == CellInfo.UNAVAILABLE) {
                     this.csi_rsrq = "Unavailable"
                 }
                 this.csi_sinr = nrSS[0].csiSinr.toString()
-                if(nrSS[0].csiSinr == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].csiSinr == CellInfo.UNAVAILABLE) {
                     this.csi_sinr = "Unavailable"
                 }
                 this.ss_rsrp = nrSS[0].ssRsrp.toString()
-                if(nrSS[0].ssRsrp == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].ssRsrp == CellInfo.UNAVAILABLE) {
                     this.ss_rsrp = "Unavailable"
                 }
                 this.ss_rsrq = nrSS[0].ssRsrq.toString()
-                if(nrSS[0].ssRsrq == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].ssRsrq == CellInfo.UNAVAILABLE) {
                     this.ss_rsrq = "Unavailable"
                 }
                 this.ss_sinr = nrSS[0].ssSinr.toString()
-                if(nrSS[0].ssSinr == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].ssSinr == CellInfo.UNAVAILABLE) {
                     this.ss_sinr = "Unavailable"
                 }
                 this.asu = nrSS[0].asuLevel.toString()
-                if(nrSS[0].asuLevel == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].asuLevel == CellInfo.UNAVAILABLE) {
                     this.asu = "Unavailable"
                 }
                 this.level = nrSS[0].level.toString()
-                if(nrSS[0].level == CellInfo.UNAVAILABLE)
-                {
+                if (nrSS[0].level == CellInfo.UNAVAILABLE) {
                     this.level = "Unavailable"
                 }
             }
         }
     }
 
-    public fun toCSVString(): String{
+    public fun toCSVString(): String {
         var csvString = ""
         if (this.nrType.isNotEmpty()) {
-            csvString = (Constants.BS_INFO_START_MARKER +  ","
-                    + this.nrType +  ","
+            csvString = (Constants.BS_INFO_START_MARKER + ","
+                    + this.nrType + ","
                     + this.dbm + ","
                     + this.csi_rsrp + ","
-                    + this.csi_rsrq+ ","
+                    + this.csi_rsrq + ","
                     + this.csi_sinr + ","
                     + this.ss_rsrp + ","
                     + this.ss_rsrq + ","
@@ -100,11 +88,29 @@ class NRSignalStrengthInfo(signalStrength: SignalStrength?) {
         return csvString
     }
 
+    public fun toJSON(): JSONObject {
+        var jsonObject = JSONObject()
+        if (this.nrType.isNotEmpty()) {
+            jsonObject.put("nr_type", this.nrType)
+            jsonObject.put("dbm", this.dbm)
+            jsonObject.put("csi_rsrp", this.csi_rsrp)
+            jsonObject.put("csi_rsrq", this.csi_rsrq)
+            jsonObject.put("csi_sinr", this.csi_sinr)
+            jsonObject.put("ss_rsrp", this.ss_rsrp)
+            jsonObject.put("ss_rsrq", this.ss_rsrq)
+            jsonObject.put("ss_sinr", this.ss_sinr)
+            jsonObject.put("level", this.level)
+            jsonObject.put("asu", this.asu)
+        }
+        return jsonObject
+    }
+
+
     @RequiresApi(Build.VERSION_CODES.N)
     public fun toDisplayString(): String {
         var displayString = ""
         if (this.nrType.isNotEmpty()) {
-             displayString = ("\nNR Type = " + this.nrType
+            displayString = ("\nNR Type = " + this.nrType
                     + "\nNR dBm = " + this.dbm
                     + "\nNR CSI RSRP = " + this.csi_rsrp
                     + "\nNR CSI RSRQ = " + this.csi_rsrq
@@ -117,4 +123,4 @@ class NRSignalStrengthInfo(signalStrength: SignalStrength?) {
         }
         return displayString
     }
-  }
+}

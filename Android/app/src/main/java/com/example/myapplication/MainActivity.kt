@@ -1,10 +1,13 @@
 package com.example.myapplication
 
 import android.Manifest
+import android.content.Context
+import org.json.JSONObject
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.wifi.WifiManager
 import android.os.*
 import android.telephony.CellInfo
 import android.telephony.TelephonyManager
@@ -36,7 +39,6 @@ import java.net.ServerSocket
 import java.net.Socket
 import kotlin.concurrent.thread
 
-
 class MainActivity : AppCompatActivity(), MessageListener {
     private val mHandler =  Handler();
     private val mUIHandler =  Handler();
@@ -48,16 +50,18 @@ class MainActivity : AppCompatActivity(), MessageListener {
     private var mIsRunning = false;
     private var mExpStartElapsedNanoSec: Long = -1;
     private var mMeasurementSocket = Socket();
+    private var mMACAddress = ""
 
     // Permissions
     private var mStorageWritePermission = false;
     private var mLocationPermission = false;
     private var mPhoneStateReadPermission = false;
+    private var mWiFiStatePermission = false;
 
     private fun streamToComputeNode(messageString: String){
         try
         {
-            if(!this.mMeasurementSocket.isConnected())
+            if(this.mMeasurementSocket.isClosed() || !this.mMeasurementSocket.isConnected)
             {
                 this.mMeasurementSocket = Socket(COMPUTE_NODE_IP, MEASUREMENT_PORT)
             }
@@ -70,11 +74,29 @@ class MainActivity : AppCompatActivity(), MessageListener {
         }
     }
 
+    private fun getMac(): String {
+        val manager = getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val info = manager.connectionInfo
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return "unknown"
+        }
+        return info.macAddress.toUpperCase()
+    }
+
     private fun updatePermissions()
     {
         mLocationPermission = (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) && (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         mStorageWritePermission = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         mPhoneStateReadPermission = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
+        mWiFiStatePermission = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestPermissions()
@@ -92,6 +114,10 @@ class MainActivity : AppCompatActivity(), MessageListener {
         if(!mPhoneStateReadPermission)
         {
             permissionArray.add(Manifest.permission.READ_PHONE_STATE)
+        }
+        if(!mWiFiStatePermission)
+        {
+            permissionArray.add(Manifest.permission.ACCESS_WIFI_STATE)
         }
         if(permissionArray.size > 0)
         {
@@ -112,6 +138,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
             val sock = ServerSocket(Constants.COMMAND_PORT)
             while (true) {
                 val client = sock.accept()
+                mMACAddress = this.getMac()
                 mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile,"Client connected : ${client.inetAddress.hostAddress}")
                 val command = BufferedReader(InputStreamReader(client.inputStream)).readLine().trim()
                 mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile,"Received command from ${client.inetAddress.hostAddress}: $command")
@@ -171,7 +198,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
                               }
                           }
                           val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-                          var csvLog = CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "csv", false, mExpStartElapsedNanoSec )
+                          var jsonLog = CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "json", mMeasurementCampaignName, mMACAddress, mExpStartElapsedNanoSec )
 
                           if (SettingsHandler.LogLocally)
                           {
@@ -179,14 +206,14 @@ class MainActivity : AppCompatActivity(), MessageListener {
                                   mLogHandler.appendToMeasurements(
                                       mStorageWritePermission,
                                       mMeasurementCampaignName,
-                                      csvLog
+                                      jsonLog
                                   )
                               }
                           }
                           if (SettingsHandler.StreamToComputeNode)
                           {
                               thread {
-                                  streamToComputeNode(mMeasurementCampaignName + LOG_START_DELIM + csvLog)
+                                  streamToComputeNode(jsonLog)
                               }
                           }
                     }
@@ -213,11 +240,9 @@ class MainActivity : AppCompatActivity(), MessageListener {
                     val textView: TextView = findViewById(R.id.textView)
                     var displayString = ""
                     val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-                    displayString += CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "display", true, mExpStartElapsedNanoSec)
-
+                    displayString += CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "display",  mMeasurementCampaignName, mMACAddress, mExpStartElapsedNanoSec)
                     textView.text = displayString
                     textView.setMovementMethod(ScrollingMovementMethod());
-
                 }
                 catch(t: Throwable)
                 {
@@ -353,7 +378,8 @@ class MainActivity : AppCompatActivity(), MessageListener {
         }
     }
 
-    private fun stop(){
+    private fun stop()
+    {
         runOnUiThread({
             val startBtn: Button = findViewById(R.id.startBtn)
             val editText: EditText = findViewById(R.id.campaignName)
@@ -372,9 +398,11 @@ class MainActivity : AppCompatActivity(), MessageListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         try {
             super.onCreate(savedInstanceState)
+            this.mMACAddress = this.getMac()
             setContentView(R.layout.activity_main)
             thread {
                 startCommandServer();
@@ -409,10 +437,12 @@ class MainActivity : AppCompatActivity(), MessageListener {
 
 
 
-    override fun onConnectSuccess() {
+    override fun onConnectSuccess()
+    {
     }
 
-    override fun onConnectFailed() {
+    override fun onConnectFailed()
+    {
     }
 
     override fun onClose()

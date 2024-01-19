@@ -1,6 +1,16 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <EditTextPreference
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:digits="0123456789"
+        android:hint="Interval, in milliseconds, at which cellular and GPS measurements are periodically captured, logged, and streamed."
+        android:inputType="numberDecimal"
+        android:numeric="decimal"
+        app:key="pref_sDeviceName"
+        app:title="Device Name"
+        app:useSimpleSummaryProvider="true" />
     <SwitchPreference
         app:defaultValue="true"
         app:key="pref_bLogLocally"
