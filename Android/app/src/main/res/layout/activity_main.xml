@@ -54,32 +54,21 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />
+
         <ScrollView
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_height="450dp"
             android:layout_margin="5dp"
-            android:scrollbars="vertical"
             android:fadeScrollbars="false"
-            android:scrollbarAlwaysDrawVerticalTrack="true">
-<!--            <TextView-->
-<!--                android:id="@+id/buildInfo"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="Build timestamp:"-->
-<!--                android:layout_marginTop="16dp"-->
-<!--                app:layout_constraintBottom_toBottomOf="parent"-->
-<!--                app:layout_constraintEnd_toEndOf="parent"-->
-<!--                app:layout_constraintHorizontal_bias="0.104"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toTopOf="parent"-->
-<!--                app:layout_constraintVertical_bias="0.213"-->
-<!--                tools:text="Build timestamp:" />-->
-                <TextView
+            android:scrollbarAlwaysDrawVerticalTrack="true"
+            android:scrollbars="vertical">
+
+            <TextView
                 android:id="@+id/textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Measurement log:"
                 android:layout_marginTop="16dp"
+                android:text="Measurement log:"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.104"
@@ -87,7 +76,9 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintVertical_bias="0.213"
                 tools:text="Measurement log:" />
+
         </ScrollView>
+
     </LinearLayout>
 
 

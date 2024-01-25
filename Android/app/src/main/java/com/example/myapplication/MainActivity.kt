@@ -1,13 +1,10 @@
 package com.example.myapplication
 
 import android.Manifest
-import android.content.Context
-import org.json.JSONObject
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
-import android.net.wifi.WifiManager
 import android.os.*
 import android.telephony.CellInfo
 import android.telephony.TelephonyManager
@@ -20,12 +17,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import com.example.myapplication.Constants.COMMAND_DELIM
+import com.example.myapplication.Constants.COMPUTE_NODE_IP
 import com.example.myapplication.Constants.GPS_LOG_START_MARKER
 import com.example.myapplication.Constants.GPS_LOG_STOP_MARKER
 import com.example.myapplication.Constants.LOG_FOLDER_NAME
 import com.example.myapplication.Constants.LOG_START_DELIM
 import com.example.myapplication.Constants.MEASUREMENT_PORT
-import com.example.myapplication.Constants.COMPUTE_NODE_IP
 import com.example.myapplication.Constants.START_COMMAND
 import com.example.myapplication.Constants.STOP_COMMAND
 import com.example.myapplication.Constants.UPDATE_SETTINGS_COMMAND
@@ -50,7 +47,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
     private var mIsRunning = false;
     private var mExpStartElapsedNanoSec: Long = -1;
     private var mMeasurementSocket = Socket();
-    private var mMACAddress = ""
+    private var mIMEI = ""
 
     // Permissions
     private var mStorageWritePermission = false;
@@ -74,21 +71,11 @@ class MainActivity : AppCompatActivity(), MessageListener {
         }
     }
 
-    private fun getMac(): String {
-        val manager = getSystemService(Context.WIFI_SERVICE) as WifiManager
-        val info = manager.connectionInfo
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-        {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return "unknown"
-        }
-        return info.macAddress.toUpperCase()
+    private fun getIMEI(): String {
+        val ts = TELEPHONY_SERVICE
+        val mTelephonyMgr = getSystemService(ts) as TelephonyManager
+        val imei = mTelephonyMgr.deviceId
+        return imei
     }
 
     private fun updatePermissions()
@@ -138,7 +125,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
             val sock = ServerSocket(Constants.COMMAND_PORT)
             while (true) {
                 val client = sock.accept()
-                mMACAddress = this.getMac()
+                mIMEI = this.getIMEI()
                 mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile,"Client connected : ${client.inetAddress.hostAddress}")
                 val command = BufferedReader(InputStreamReader(client.inputStream)).readLine().trim()
                 mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile,"Received command from ${client.inetAddress.hostAddress}: $command")
@@ -198,7 +185,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
                               }
                           }
                           val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-                          var jsonLog = CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "json", mMeasurementCampaignName, mMACAddress, mExpStartElapsedNanoSec )
+                          var jsonLog = CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "json", mMeasurementCampaignName, mIMEI, mExpStartElapsedNanoSec )
 
                           if (SettingsHandler.LogLocally)
                           {
@@ -240,7 +227,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
                     val textView: TextView = findViewById(R.id.textView)
                     var displayString = ""
                     val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-                    displayString += CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "display",  mMeasurementCampaignName, mMACAddress, mExpStartElapsedNanoSec)
+                    displayString += CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "display",  mMeasurementCampaignName, mIMEI, mExpStartElapsedNanoSec)
                     textView.text = displayString
                     textView.setMovementMethod(ScrollingMovementMethod());
                 }
@@ -402,7 +389,6 @@ class MainActivity : AppCompatActivity(), MessageListener {
     {
         try {
             super.onCreate(savedInstanceState)
-            this.mMACAddress = this.getMac()
             setContentView(R.layout.activity_main)
             thread {
                 startCommandServer();

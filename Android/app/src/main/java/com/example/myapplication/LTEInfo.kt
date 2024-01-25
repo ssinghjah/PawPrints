@@ -24,7 +24,7 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
     private var level: String =  ""
 
     private var cellIdentity: String = ""
-    private var bands: String = ""
+    private var bands: ArrayList<Int> = ArrayList()
     private var earfcn: String = ""
     private var pci: String = ""
     private var tac: String = ""
@@ -88,12 +88,12 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         }
         if (android.os.Build.VERSION.SDK_INT >= MIN_BANDS_BUILD)
         {
-            this.bands = cellInfo.cellIdentity.bands.toString()
+            for(band in cellInfo.cellIdentity.bands)
+            {
+                this.bands.add(band)
+            }
         }
-        else
-        {
-            this.bands = "Not supported. API version >= $MIN_BANDS_BUILD required."
-        }
+
         this.earfcn = cellInfo.cellIdentity.earfcn.toString()
         if(cellInfo.cellIdentity.earfcn == CellInfo.UNAVAILABLE)
         {
@@ -134,6 +134,38 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
             //this.modemTime = "Not supported. API version >= $MIN_MODEM_TIME_BUILD required."
         }
         this.elapsedTime = ((SystemClock.elapsedRealtimeNanos() - refTime) / Math.pow(10.0, 9.0)).toString()
+    }
+
+    private fun get_modes(band_numbers: ArrayList<Int>): ArrayList<String>{
+        val modes = ArrayList<String>()
+        for (band_number in band_numbers){
+            var mode = "TDD"
+            if((band_number >= 1 && band_number <= 32) || (band_number >= 65 && band_number <= 85))
+            {
+                mode = "FDD"
+            }
+            modes.add(mode)
+        }
+        return modes
+    }
+
+    private fun band_num_to_description(band_numbers: ArrayList<Int>): String{
+        var bands_description = ""
+        for (band in band_numbers){
+           val band = when (band) {
+                1 -> "Band 1: FDD, 2100 MHz (Uplink: 1920 - 1980 MHz, Downlink: 2110 - 2170 MHz)"
+                2 -> "Band 2: FDD, 1900 MHz (Uplink: 1850 - 1910 MHz, Downlink: 1930 - 1990 MHz)"
+                3 -> "Band 3: FDD, 1800 MHz (Uplink: 1710 - 1785 MHz, Downlink: 1805 - 1880 MHz)"
+                4 -> "Band 4: FDD, 1700 MHz (Uplink: 1710 - 1755 MHz, Downlink: 2110 - 2155 MHz)"
+                // Add more cases for other bands
+                else -> "Unknown Band"
+        }
+            bands_description += band + " | "
+        }
+        if (!bands_description.isEmpty()) {
+            bands_description = bands_description.substring(0, bands_description.length - 2)
+        }
+        return bands_description
     }
 
     public fun toCSVString(settingsHandler: SettingsHandler): String{
@@ -205,10 +237,11 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         jsonObject.put("ci", this.cellIdentity)
         jsonObject.put("tac", this.tac)
         jsonObject.put("bandwidth", this.bandwidth)
-        // jsonObject.put("bands", this.bands)
+        jsonObject.put("bands", this.bands)
+        jsonObject.put("modes", this.get_modes(this.bands))
+        jsonObject.put("bands_description", this.band_num_to_description(this.bands))
         jsonObject.put("mcc", this.mcc)
         jsonObject.put("mnc", this.mnc)
-
         return jsonObject
     }
 
@@ -228,7 +261,8 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         displayString += "\nTracking area code = " + this.tac
         displayString += "\nCell identity = " + this.cellIdentity
         displayString += "\nBandwidth = " + this.bandwidth
-        displayString += "\nBands = " + this.bands
+        displayString += "\nModes = " + this.get_modes(this.bands).joinToString()
+        displayString += "\nBands = " + this.band_num_to_description(this.bands)
         displayString += "\nMobile country code = " + this.mcc
         displayString += "\nMobile network code = " + this.mnc
         return displayString

@@ -14,7 +14,7 @@ import java.util.*
 
 class CellMeasurementsHandler {
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun getInfo(telephonyManager: TelephonyManager, settings:SettingsHandler, stringFormat:String, campaignName:String, macAddress:String, startNanoSec:Long):String
+    fun getInfo(telephonyManager: TelephonyManager, settings:SettingsHandler, stringFormat:String, campaignName:String, imei:String, startNanoSec:Long):String
     {
         val allCellInfo = telephonyManager.allCellInfo
         var infoString:String = ""
@@ -30,7 +30,7 @@ class CellMeasurementsHandler {
             logLineJSON.put("campaign_name", campaignName)
             logLineJSON.put("abs_time",  System.currentTimeMillis())
             logLineJSON.put("device_name",  settings.Device_Name)
-            logLineJSON.put("device_mac",  macAddress)
+            logLineJSON.put("device_imei",  imei)
 
             val cellsJSON = JSONArray()
             val itr = allCellInfo.listIterator()
@@ -59,7 +59,7 @@ class CellMeasurementsHandler {
                     infoString += "\nFor the connected base station:"
                     infoString += GeneralConnectionInfo(telephonyManager).toDisplayString()
                     infoString += getCellInfo(registeredCellInfo, settings, stringFormat, startNanoSec).get("string")
-                    infoString += getNRSigStrengthInfo(telephonyManager, stringFormat)
+                    infoString += getNRSigStrengthInfo(telephonyManager, stringFormat).get("string")
                 }
               }
             return infoString
@@ -73,7 +73,7 @@ class CellMeasurementsHandler {
     private fun getNRSigStrengthInfo(telephonyManager: TelephonyManager, stringFormat: String):JSONObject
     {
         var infoJSON = JSONObject()
-        var infoString = ""
+        infoJSON.put("string", "")
         if (telephonyManager.signalStrength != null && android.os.Build.VERSION.SDK_INT >= Constants.MIN_SIG_STRENGTH_API_VERSION) {
             val nrSSInfo = NRSignalStrengthInfo(telephonyManager.signalStrength)
             if (nrSSInfo.nrType.isNotEmpty())
