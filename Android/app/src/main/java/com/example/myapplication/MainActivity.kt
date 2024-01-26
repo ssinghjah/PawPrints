@@ -125,7 +125,6 @@ class MainActivity : AppCompatActivity(), MessageListener {
             val sock = ServerSocket(Constants.COMMAND_PORT)
             while (true) {
                 val client = sock.accept()
-                mIMEI = this.getIMEI()
                 mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile,"Client connected : ${client.inetAddress.hostAddress}")
                 val command = BufferedReader(InputStreamReader(client.inputStream)).readLine().trim()
                 mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile,"Received command from ${client.inetAddress.hostAddress}: $command")
@@ -340,9 +339,9 @@ class MainActivity : AppCompatActivity(), MessageListener {
                 }
                 editText.focusable = View.NOT_FOCUSABLE;
 
-                mIsRunning = true
+            mIsRunning = true
             mExpStartElapsedNanoSec = SystemClock.elapsedRealtimeNanos();
-
+            //            mIMEI = this.getIMEI()
             startBtn.text = "Stop"
             thread{
                 kotlin.run {
@@ -390,6 +389,9 @@ class MainActivity : AppCompatActivity(), MessageListener {
         try {
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
+            val buildDateTextView: TextView = findViewById(R.id.buildOn) // Replace R.id.buildDateTextView with the actual ID of your TextView
+            buildDateTextView.text = getString(R.string.build_date, BuildConfig.BUILD_DATE)
+
             thread {
                 startCommandServer();
             }
