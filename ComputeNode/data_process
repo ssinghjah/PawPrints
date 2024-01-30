@@ -44,7 +44,7 @@ def recv_stream_from_phone(options, kafka_publish_queue):
         while not Thread_Stop_Flag.is_set():
             try:
                 conn, addr = s.accept()
-                while True:
+                while not Thread_Stop_Flag.is_set():
                     data = conn.recv(TCP_BUFFER_SIZE).decode('utf-8')
                     if len(data) == 0:
                         break
