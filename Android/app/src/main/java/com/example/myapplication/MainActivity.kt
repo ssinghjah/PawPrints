@@ -30,6 +30,7 @@ import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
+import org.junit.Test.None
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
@@ -48,12 +49,14 @@ class MainActivity : AppCompatActivity(), MessageListener {
     private var mExpStartElapsedNanoSec: Long = -1;
     private var mMeasurementSocket = Socket();
     private var mIMEI = ""
+    private var mTelephonyManager: TelephonyManager? =  null;
 
     // Permissions
     private var mStorageWritePermission = false;
     private var mLocationPermission = false;
     private var mPhoneStateReadPermission = false;
     private var mWiFiStatePermission = false;
+    private var mNetworkTypeListener = NetworkTypeListener()
 
     private fun streamToComputeNode(messageString: String){
         try
@@ -77,6 +80,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
         val imei = mTelephonyMgr.deviceId
         return imei
     }
+
 
     private fun updatePermissions()
     {
@@ -227,6 +231,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
                     var displayString = ""
                     val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
                     displayString += CellMeasurementsHandler().getInfo(telephonyManager, SettingsHandler, "display",  mMeasurementCampaignName, mIMEI, mExpStartElapsedNanoSec)
+                    displayString += mNetworkTypeListener.getDisplayString()
                     textView.text = displayString
                     textView.setMovementMethod(ScrollingMovementMethod());
                 }
@@ -329,6 +334,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
         try {
             updatePermissions()
             requestPermissions()
+            mNetworkTypeListener.registerListener(this.mTelephonyManager!!)
             runOnUiThread({
             val startBtn: Button = findViewById(R.id.startBtn)
             val editText: EditText = findViewById(R.id.campaignName)
@@ -366,6 +372,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
 
     private fun stop()
     {
+        this.mNetworkTypeListener.deregisterListener(this.mTelephonyManager!!)
         runOnUiThread({
             val startBtn: Button = findViewById(R.id.startBtn)
             val editText: EditText = findViewById(R.id.campaignName)
@@ -388,7 +395,8 @@ class MainActivity : AppCompatActivity(), MessageListener {
     {
         try {
             super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_main)
+            this.mTelephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+            setContentView(R.layout.activity_main)  
             val buildDateTextView: TextView = findViewById(R.id.buildOn) // Replace R.id.buildDateTextView with the actual ID of your TextView
             buildDateTextView.text = getString(R.string.build_date, BuildConfig.BUILD_DATE)
 

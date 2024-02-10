@@ -56,6 +56,7 @@ class GeneralConnectionInfo(telephonyManager: TelephonyManager) {
         jsonObject.put("network_operator",this.networkOperatorName)
         jsonObject.put("sim_operator", this.simOperatorName)
         jsonObject.put("sim_carrier_id", this.simCarrierIdName)
+        jsonObject.put("connected_cell_tech", this.cellTech)
         return jsonObject
     }
 

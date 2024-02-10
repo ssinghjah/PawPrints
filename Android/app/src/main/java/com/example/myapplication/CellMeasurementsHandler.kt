@@ -31,15 +31,22 @@ class CellMeasurementsHandler {
             logLineJSON.put("abs_time",  System.currentTimeMillis())
             logLineJSON.put("device_name",  settings.Device_Name)
             logLineJSON.put("device_imei",  imei)
+            var connected_pci = -1
 
             val cellsJSON = JSONArray()
             val itr = allCellInfo.listIterator()
             while (itr.hasNext())
             {
-               val cellJSON = getCellInfo(itr.next(), settings, stringFormat, startNanoSec)
+                val cell = itr.next() as CellInfoLte
+                if (cell.isRegistered)
+                {
+                    connected_pci = cell.cellIdentity.pci
+                }
+               val cellJSON = getCellInfo(cell, settings, stringFormat, startNanoSec)
                 cellsJSON.put(cellJSON)
             }
-            logLineJSON.put("cells",cellsJSON)
+            logLineJSON.put("connected_pci", connected_pci)
+            logLineJSON.put("cells", cellsJSON)
             return logLineJSON.toString()
         }
         else if(stringFormat == "display")
@@ -51,16 +58,18 @@ class CellMeasurementsHandler {
               {
                 infoString += "\n5G cellular info cannot be detected on this device. Support for API version >= ${Constants.MIN_NR_SIG_STRENGTH_API_VERSION} required.\n"
               }
-              if(allCellInfo.size > 0)
-              {
-                val registeredCellInfo = getRegisteredCellInfo(allCellInfo)
-                if(stringFormat == "display")
-                {
-                    infoString += "\nFor the connected base station:"
-                    infoString += GeneralConnectionInfo(telephonyManager).toDisplayString()
-                    infoString += getCellInfo(registeredCellInfo, settings, stringFormat, startNanoSec).get("string")
-                    infoString += getNRSigStrengthInfo(telephonyManager, stringFormat).get("string")
-                }
+              if(allCellInfo.size > 0) {
+                  val registeredCellInfo = getRegisteredCellInfo(allCellInfo)
+
+                  infoString += "\nFor the connected base station:"
+                  infoString += GeneralConnectionInfo(telephonyManager).toDisplayString()
+                  infoString += getCellInfo(
+                      registeredCellInfo,
+                      settings,
+                      stringFormat,
+                      startNanoSec
+                  ).get("string")
+                  infoString += getNRSigStrengthInfo(telephonyManager, stringFormat).get("string")
               }
             return infoString
         }

@@ -242,6 +242,7 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         jsonObject.put("bands_description", this.band_num_to_description(this.bands))
         jsonObject.put("mcc", this.mcc)
         jsonObject.put("mnc", this.mnc)
+        jsonObject.put("is_connected", this.bConnected)
         return jsonObject
     }
 
