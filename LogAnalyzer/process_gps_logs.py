@@ -1,8 +1,9 @@
 import common
+import os
 from datetime import datetime
 
-GPS_RAW_LOG = "../Data/gps_raw.csv"
-DATA_FOLDER = "../Data/"
+GPS_RAW_LOG = "./WorkSpace/gps.csv"
+OUTPUT_FOLDER = "./WorkSpace/Data"
 TIME_INDEX = 7
 ALTITUDE_INDEX = 3
 LAT_INDEX = 1
@@ -20,10 +21,10 @@ def process_gps_log():
         latlons.append([latitude, longitude])
         altitudes.append(altitude)
         # Convert to milliseconds since epoch
-        epoch_time = datetime.strptime(str_time, '%Y-%m-%d %H:%M:%S')
+        epoch_time = datetime.strptime(str_time, '%Y-%m-%d %H:%M:%S.%f')
         epoch_times.append(epoch_time.timestamp()*1000.0)
-    common.write_csv(DATA_FOLDER + "gps_coords.csv", latlons)
-    common.write_csv(DATA_FOLDER + "gps_altitude.csv", altitudes)
-    common.write_csv(DATA_FOLDER + "gps_abs_time.csv", epoch_times)
+    common.write_csv(os.path.join(OUTPUT_FOLDER, "gps_coords.csv"), latlons)
+    common.write_csv(os.path.join(OUTPUT_FOLDER, "gps_altitude.csv"), altitudes)
+    common.write_csv(os.path.join(OUTPUT_FOLDER, "gps_abs_time.csv"), epoch_times)
 
 process_gps_log()

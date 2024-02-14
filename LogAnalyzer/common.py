@@ -1,6 +1,8 @@
 import csv
 import settings
 import enums
+import matplotlib.pyplot as plt
+
 def write_csv(fName, values):
     with open(fName, 'w') as f:
         csv_writer = csv.writer(f)
@@ -10,6 +12,7 @@ def write_csv(fName, values):
                 csv_writer.writerow([value])
             else:
                 csv_writer.writerow(value)
+
 def write_file(fName, content):
     with open(fName, "w") as f:
         f.write(content)
@@ -26,6 +29,8 @@ def first_indices_greater_than(elem1, elem2, list):
         if elem2_index != -1 and elem1_index != -1:
             break
     return int(elem1_index), int(elem2_index)
+
+
 def read_csv(csv_path):
     rows = []
     with open(csv_path) as csv_handle:
@@ -36,7 +41,6 @@ def read_csv(csv_path):
             else:
                 rows.append(try_float_convert(row[0]))
     return rows
-
 
 def hex_to_rgb(hex):
     rgb = []
@@ -63,9 +67,11 @@ def generate_discrete_colors(num_colors):
 def rgb_to_kml_hex(rgb_dict):
     hex = 'ff{:02x}{:02x}{:02x}'.format(int(rgb_dict["b"]*255.0), int(rgb_dict["g"]*255.0), int(rgb_dict["r"]*255.0))
     return hex
+
 def rgb_to_hex(rgb_dict):
     hex = '#{:02x}{:02x}{:02x}ff'.format(int(rgb_dict["r"] * 255.0), int(rgb_dict["g"] * 255.0), int(rgb_dict["b"] * 255.0))
     return hex
+
 def try_float_convert(string_input):
     if string_input.isdigit():
         return int(string_input)
@@ -75,8 +81,19 @@ def try_float_convert(string_input):
             return float_string
         except ValueError:
             return string_input
-def value_to_color(v, vmin, vmax):
+        
+def value_to_color(v, vmin, vmax, colormap = None):
     color = {"r": 1.0, "g": 1.0, "b":1.0} # r,g,b
+
+    if colormap != None:
+        norm = plt.Normalize(vmin, vmax)
+        cmap = plt.cm.get_cmap(colormap)
+        rgba = cmap(norm(v))
+        color["r"] = rgba[0]
+        color["g"] = rgba[1]
+        color["b"] = rgba[2]
+        return color
+
     if (v < vmin):
         v = vmin
     if (v > vmax):
