@@ -25,9 +25,9 @@
             android:id="@+id/settingsBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="100dp"
             android:layout_marginTop="16dp"
             android:layout_marginRight="16dp"
-            android:layout_marginLeft="100dp"
             android:text="Settings"
             app:layout_constraintHorizontal_bias="0.104"
             app:layout_constraintLeft_toRightOf="@+id/startBtn"
@@ -79,6 +79,12 @@
 
         </ScrollView>
 
+        <TextView
+            android:id="@+id/buildOn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Build: " />
+
     </LinearLayout>
 
 
@@ -87,14 +93,6 @@
         android:layout_height="match_parent">
 
         <!-- Other views can be added above this TextView if needed -->
-
-        <TextView
-            android:id="@+id/buildOn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:text="Build: " />
 
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

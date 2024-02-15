@@ -236,6 +236,7 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         jsonObject.put("ta", this.ta)
         jsonObject.put("ci", this.cellIdentity)
         jsonObject.put("tac", this.tac)
+        jsonObject.put("level", this.level)
         jsonObject.put("bandwidth", this.bandwidth)
         jsonObject.put("bands", this.bands)
         jsonObject.put("modes", this.get_modes(this.bands))
@@ -259,6 +260,7 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         displayString += "\nPCI = " + this.pci
         displayString += "\nTiming advance = " + this.ta
         displayString += "\nEARFCN = " + this.earfcn
+        displayString += "\nLevel = ", this.level
         displayString += "\nTracking area code = " + this.tac
         displayString += "\nCell identity = " + this.cellIdentity
         displayString += "\nBandwidth = " + this.bandwidth
