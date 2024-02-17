@@ -10,8 +10,8 @@ OUTPUT_FOLDER = "./WorkSpace/Data/"
 
 # Default Options
 PAWPRINTS_LOG_PATH = "./pawprints.jsonl"
-MERGE_DEFAULT = "per-cell-kpi" # Can be all or per-cell or per-cell-kpi
-OUTPUT_CSV_PREFIX = "pawprints"
+MERGE_DEFAULT = "all" # Can be all or per-cell or per-cell-kpi
+OUTPUT_CSV_PREFIX = ""
 
 def append_to_csv(path, single_row):
     with open(path, 'a') as f_pointer:
@@ -22,7 +22,7 @@ def append_to_csv(path, single_row):
             csv_pointer.writerow([single_row])
     
 def get_csv_kpi_path(pci, kpi):
-    return os.path.join(OUTPUT_FOLDER, OUTPUT_CSV_PREFIX + "_" + str(pci) + "_" + kpi + ".csv")
+    return os.path.join(OUTPUT_FOLDER, OUTPUT_CSV_PREFIX + str(pci) + "_" + kpi + ".csv")
     
 def process_log_row(log_row, csv_data, options):
     if log_row["type"] == "cellular":
@@ -41,8 +41,8 @@ def process_log_row(log_row, csv_data, options):
             # Write connected cell logs
             connected_pci = log_row["connected_pci"]
             append_to_csv(get_csv_kpi_path("connected", "pci"), connected_pci)
-            append_to_csv("abs_time.csv", abs_time)
-            append_to_csv("rel_time.csv", rel_time)
+            append_to_csv(get_csv_kpi_path("connected", "abs_time"), abs_time)
+            append_to_csv(get_csv_kpi_path("connected","rel_time"), rel_time)
             connected_index = log_row["connected_index"]
             if connected_pci != -1:
                 connected_cell = log_row["cells"][connected_index]
@@ -51,22 +51,35 @@ def process_log_row(log_row, csv_data, options):
                         append_to_csv(get_csv_kpi_path('connected', kpi), connected_cell[kpi])
 
         elif options.mergemode == "all":
-            pd_json = log_row.copy()
             for cell in log_row["cells"]:
-                pci = cell["pci"]
-                for kpi in cell:
-                    if kpi != "pci":
-                        pd_json[str(pci) + "_" + kpi] = cell[kpi]
+                panda_cell = cell.copy()
+                
+                panda_cell["abs_time"] = log_row["abs_time"]
+                panda_cell["rel_time"] = log_row["rel_time"]
 
-            connected_pci = log_row["connected_pci"]
-            connected_index = log_row["connected_index"]
-            if connected_pci != -1:
-                connected_cell = log_row["cells"][connected_index]
-                for kpi in connected_cell:
-                    if kpi != "pci":
-                        pd_json["connected_" + kpi] = cell[kpi]
-            del pd_json["cells"]
-            csv_data["data"] = pandas.concat([csv_data["data"], pandas.DataFrame(pd_json, index = [0])], ignore_index = True)
+                if "companion_abs_time" in panda_cell:
+                    panda_cell["companion_abs_time"] = log_row["companion_abs_time"]
+
+                panda_cell["is_connected"] = 0
+                if cell["pci"] == log_row["connected_pci"]:
+                    panda_cell["is_connected"] = 1 
+
+                csv_data["data"] = pandas.concat([csv_data["data"], pandas.DataFrame(panda_cell, index = [0])], ignore_index = True)
+
+
+                # pci = cell["pci"]
+                # for kpi in cell:
+                #     if kpi != "pci":
+                #         pd_json[str(pci) + "_" + kpi] = cell[kpi]
+
+            # connected_pci = log_row["connected_pci"]
+            # connected_index = log_row["connected_index"]
+            # if connected_pci != -1:
+            #     connected_cell = log_row["cells"][connected_index]
+            #     for kpi in connected_cell:
+            #         if kpi != "pci":
+            #             pd_json["connected_" + kpi] = cell[kpi]
+            
         
     # Write metadata about seen cells
     seen_pcis = []
@@ -81,7 +94,7 @@ def process_log(options):
     
     csv_data = {"name":"", "data": None}
     if options.mergemode== "all":
-        csv_data["data"] = pandas.DataFrame()
+        csv_data["data"] = pandas.DataFrame(index=None)
     
     with open(PAWPRINTS_LOG_PATH) as f:
         log_rows = f.readlines()
@@ -90,7 +103,7 @@ def process_log(options):
            process_log_row(log_row, csv_data, options)
 
     if options.mergemode == "all":
-        csv_data["data"].to_csv(os.path.join(OUTPUT_FOLDER + options.csvprefix + ".csv"))
+        csv_data["data"].to_csv(os.path.join(OUTPUT_FOLDER, "pawprints.csv"))
     '''
     summary = {}
     summary["unique_num_cells_seen"] = 
