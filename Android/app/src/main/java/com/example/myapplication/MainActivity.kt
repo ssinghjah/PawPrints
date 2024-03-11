@@ -30,7 +30,6 @@ import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
-import org.junit.Test.None
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
@@ -359,6 +358,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
                     }
                 }
             }
+                //val iperfResults= IperfRunner().execute("iperf.stealth.net", "-p5201", "-t3");
 
             kotlin.run {
                 mUIHandler.postDelayed(mDisplayMeasurements, SettingsHandler.UIRefreshInterval);

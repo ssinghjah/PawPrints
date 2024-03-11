@@ -8,9 +8,10 @@ import android.telephony.CellSignalStrengthNr
 import androidx.annotation.RequiresApi
 import org.json.JSONObject
 
+@RequiresApi(Build.VERSION_CODES.Q)
 class NRInfo(cellInfo: CellInfoNr, refTime: Long) {
     var bConnected: String
-    var nci: String
+    var nci: Long = Int.MIN_VALUE.toLong()
     var nrarfcn: String
     var pci: String
     var tac: String
@@ -18,31 +19,25 @@ class NRInfo(cellInfo: CellInfoNr, refTime: Long) {
     var mcc: String?
     var mnc: String?
 
-    var csi_rsrp: String
-    var csi_rsrq: String
-    var csi_sinr: String
+    var csi_rsrp: Int = Int.MIN_VALUE
+    var csi_rsrq: Int =  Int.MIN_VALUE
+    var csi_sinr: Int =  Int.MIN_VALUE
 //    val csi_cqi_report: List<Int>,
 //    val csi_cqi_table_index: Int,
 
-    var ss_rsrp: String
-    var ss_rsrq: String
-    var ss_sinr: String
+    var ss_rsrp: Int =  Int.MIN_VALUE
+    var ss_rsrq: Int =  Int.MIN_VALUE
+    var ss_sinr: Int =  Int.MIN_VALUE
 
-    var asu: String
-    var dbm: String
-    var level: String
+    var asu: Int =  Int.MIN_VALUE
+    var dbm: Int =  Int.MIN_VALUE
+    var level: Int =  Int.MIN_VALUE
 
     var modemTime: String
 
     init {
         this.bConnected = cellInfo.isRegistered.toString()
-
-        this.nci = (cellInfo.cellIdentity as CellIdentityNr).nci.toString()
-        if((cellInfo.cellIdentity as CellIdentityNr).nci == CellInfo.UNAVAILABLE_LONG)
-        {
-            this.nci = "Unavailable"
-        }
-
+        this.nci = (cellInfo.cellIdentity as CellIdentityNr).nci
         this.nrarfcn = (cellInfo.cellIdentity as CellIdentityNr).nrarfcn.toString()
         if((cellInfo.cellIdentity as CellIdentityNr).nrarfcn == CellInfo.UNAVAILABLE)
         {
@@ -72,89 +67,22 @@ class NRInfo(cellInfo: CellInfoNr, refTime: Long) {
         {
             this.mnc = "Unavailable"
         }
-
         this.bands = (cellInfo.cellIdentity as CellIdentityNr).bands.toString()
-
-        this.csi_rsrp = (cellInfo.cellSignalStrength as CellSignalStrengthNr).csiRsrp.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).csiRsrp == CellInfo.UNAVAILABLE)
-        {
-            this.csi_rsrp = "Unavailable"
-        }
-
-        this.csi_rsrq = (cellInfo.cellSignalStrength as CellSignalStrengthNr).csiRsrq.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).csiRsrq == CellInfo.UNAVAILABLE)
-        {
-            this.csi_rsrq = "Unavailable"
-        }
-
-        this.csi_sinr = (cellInfo.cellSignalStrength as CellSignalStrengthNr).csiSinr.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).csiSinr == CellInfo.UNAVAILABLE)
-        {
-            this.csi_sinr = "Unavailable"
-        }
-
-        this.ss_rsrp = (cellInfo.cellSignalStrength as CellSignalStrengthNr).ssRsrp.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).ssRsrp == CellInfo.UNAVAILABLE)
-        {
-            this.ss_rsrp = "Unavailable"
-        }
-
-        this.ss_rsrq = (cellInfo.cellSignalStrength as CellSignalStrengthNr).ssRsrq.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).ssRsrq == CellInfo.UNAVAILABLE)
-        {
-            this.ss_rsrq = "Unavailable"
-        }
-
-        this.ss_sinr = (cellInfo.cellSignalStrength as CellSignalStrengthNr).ssSinr.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).ssSinr == CellInfo.UNAVAILABLE)
-        {
-            this.ss_sinr = "Unavailable"
-        }
-
-        this.asu = (cellInfo.cellSignalStrength as CellSignalStrengthNr).asuLevel.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).asuLevel == CellInfo.UNAVAILABLE)
-        {
-            this.asu = "Unavailable"
-        }
-
-        this.dbm = (cellInfo.cellSignalStrength as CellSignalStrengthNr).dbm.toString()
-        if((cellInfo.cellIdentity as CellSignalStrengthNr).dbm == CellInfo.UNAVAILABLE)
-        {
-            this.dbm = "Unavailable"
-        }
-
-        this.level = (cellInfo.cellSignalStrength as CellSignalStrengthNr).level.toString()
+        this.csi_rsrp = (cellInfo.cellSignalStrength as CellSignalStrengthNr).csiRsrp
+        this.csi_rsrq = (cellInfo.cellSignalStrength as CellSignalStrengthNr).csiRsrq
+        this.csi_sinr = (cellInfo.cellSignalStrength as CellSignalStrengthNr).csiSinr
+        this.ss_rsrp = (cellInfo.cellSignalStrength as CellSignalStrengthNr).ssRsrp
+        this.ss_rsrq = (cellInfo.cellSignalStrength as CellSignalStrengthNr).ssRsrq
+        this.ss_sinr = (cellInfo.cellSignalStrength as CellSignalStrengthNr).ssSinr
+        this.asu = (cellInfo.cellSignalStrength as CellSignalStrengthNr).asuLevel
+        this.dbm = (cellInfo.cellSignalStrength as CellSignalStrengthNr).dbm
+        this.level = (cellInfo.cellSignalStrength as CellSignalStrengthNr).level
         this.modemTime = ((cellInfo.timestampMillis - (refTime / Math.pow(10.0, 6.0))) / Math.pow(10.0, 3.0)).toString()
     }
 
-    public fun toCSVString(): String{
-        val csvString = (Constants.BS_INFO_START_MARKER
-                + "," + this.modemTime
-                + "," + Constants.NR_5G_SA_LOG_STRING
-                + "," + this.bConnected
-                + "," + this.dbm
-                + "," + this.csi_rsrp
-                + "," + this.csi_rsrq
-                + "," + this.csi_sinr
-                + "," + this.ss_rsrp
-                + "," + this.ss_rsrq
-                + "," + this.ss_sinr
-                + "," + this.level
-                + "," + this.asu
-                + "," + this.nci
-                + "," + this.nrarfcn
-                + "," + this.pci
-                + "," + this.tac
-                + "," + this.bands
-                + "," + this.mcc
-                + "," + this.mnc
-                + Constants.BS_INFO_STOP_MARKER)
-        return csvString
-    }
 
     public fun toJSON(): JSONObject{
         val jsonObject = JSONObject()
-
         // Add key-value pairs to the JSON object
         jsonObject.put("technology", Constants.NR_5G_SA_LOG_STRING)
         jsonObject.put("dbm", this.dbm)
@@ -173,25 +101,23 @@ class NRInfo(cellInfo: CellInfoNr, refTime: Long) {
         jsonObject.put("bands", this.bands)
         jsonObject.put("mcc", this.mcc)
         jsonObject.put("mnc", this.mnc)
-
         return jsonObject
     }
 
 
     @RequiresApi(Build.VERSION_CODES.N)
     public fun toDisplayString(): String{
-        var displayString = "dBm = " + this.dbm
-        displayString += "\nSS SINR = " + this.ss_sinr
-        displayString += "\nSS RSRP = " + this.ss_rsrp
-        displayString += "\nSS RSRQ = " + this.ss_rsrq
-        displayString += "\nCSI SINR = " + this.csi_sinr
-        displayString += "\nCSI RSRP = " + this.csi_rsrp
-        displayString += "\nCSI RSRQ = " + this.csi_rsrq
-        displayString += "\nRSRP in ASU = " + this.asu
-        displayString += "\nPCI = " + this.pci
+        var displayString = "dBm = " + this.dbm.toString()
+        displayString += "\nSS SINR = " + this.ss_sinr.toString()
+        displayString += "\nSS RSRP = " + this.ss_rsrp.toString()
+        displayString += "\nSS RSRQ = " + this.ss_rsrq.toString()
+        displayString += "\nCSI SINR = " + this.csi_sinr.toString()
+        displayString += "\nCSI RSRP = " + this.csi_rsrp.toString()
+        displayString += "\nCSI RSRQ = " + this.csi_rsrq.toString()
+        displayString += "\nRSRP in ASU = " + this.asu.toString()
         displayString += "\nNRAFCN = " + this.nrarfcn
         displayString += "\nTracking area code = " + this.tac
-        displayString += "\nNR cell id = " + this.nci
+        displayString += "\nNR cell id = " + this.nci.toString()
         displayString += "\nPhysical cell id = " + this.pci
         displayString += "\nBands = " + this.bands
         displayString += "\nMobile country code = " + this.mcc
