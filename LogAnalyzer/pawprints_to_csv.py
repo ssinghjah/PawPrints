@@ -22,13 +22,14 @@ def append_to_csv(path, single_row):
         else:
             csv_pointer.writerow([single_row])
 
-def write_to_csv(path, single_row):
+def write_to_csv(path, all_rows):
     with open(path, 'w+') as f_pointer:
         csv_pointer = csv.writer(f_pointer)
-        if isinstance(single_row, list):
-            csv_pointer.writerow(single_row)
+        if isinstance(all_rows, list):
+            for row in all_rows:
+                csv_pointer.writerow([row])
         else:
-            csv_pointer.writerow([single_row])
+            csv_pointer.writerow([all_rows])
     
 def get_csv_kpi_path(pci, kpi):
     return os.path.join(OUTPUT_FOLDER, OUTPUT_CSV_PREFIX + str(pci) + "_" + kpi + ".csv")
@@ -40,17 +41,20 @@ def process_log_row(log_row, data, options):
         if options.mergemode == "per-cell-kpi":
             # Write per cell logs
             abs_time = log_row["companion_abs_time"]
-            rel_time = log_row["rel_time"]            
+            rel_time = log_row["rel_time"]
+
             for cell in log_row["cells"]:
-                    for kpi in cell:
-                        if kpi != "pci":
-                            key = cell["pci"] + "_" + kpi
-                            if key not in data:
-                                data[key] = []
-                            data[key].append(cell[kpi])
-                    #         append_to_csv(get_csv_kpi_path(cell["pci"], kpi), cell[kpi])
-                    # append_to_csv(get_csv_kpi_path(cell["pci"], "abs_time"), abs_time)
-                    # append_to_csv(get_csv_kpi_path(cell["pci"], "rel_time"), rel_time)
+                if (str(cell["pci"]) + "_rel_time") not in data:
+                    data[str(cell["pci"]) + "_rel_time"] = []
+                    data[str(cell["pci"]) + "_abs_time"] = []
+                data[str(cell["pci"]) + "_rel_time"].append(rel_time) 
+                data[str(cell["pci"]) + "_abs_time"].append(abs_time)       
+                for kpi in cell:
+                    if kpi != "pci":
+                        key = cell["pci"] + "_" + kpi
+                        if key not in data:
+                            data[key] = []
+                        data[key].append(cell[kpi])           
 
             # Write connected cell logs
             connected_pci = log_row["connected_pci"]
@@ -65,7 +69,20 @@ def process_log_row(log_row, data, options):
                         if "connected_" + kpi not in data:
                             data["connected_" + kpi] = []
                         data["connected_" + kpi].append(connected_cell[kpi])
-                        # append_to_csv(get_csv_kpi_path('connected', kpi), connected_cell[kpi])
+
+            if "nr_signal_strength" in log_row:
+                nr_sig_strength = log_row["nr_signal_strength"]
+                if "nr_signal_strength_rel_time" not in data:
+                    data["nr_signal_strength_rel_time"] = []
+                    data["nr_signal_strength_abs_time"] = []
+                
+                data["nr_signal_strength_rel_time"].append(rel_time)
+                data["nr_signal_strength_abs_time"].append(abs_time)
+
+                for kpi in nr_sig_strength:
+                    if "nr_signal_strength_" + kpi not in data:
+                        data["nr_signal_strength_" + kpi] = []
+                    data["nr_signal_strength_" + kpi].append(nr_sig_strength[kpi])
 
         elif options.mergemode == "all":
             for cell in log_row["cells"]:
@@ -88,10 +105,24 @@ def process_log_row(log_row, data, options):
     for cell in log_row["cells"]:
         seen_pcis.append(cell["pci"])
 
-    # append_to_csv(os.path.join(OUTPUT_FOLDER, 'num_seen_cells.csv', ), len(log_row["cells"]))
     append_to_csv(os.path.join(OUTPUT_FOLDER, 'seen_pci.csv'), seen_pcis)
 
+def clean_up_old_logs():
+    if os.path.exists(get_csv_kpi_path("connected", "pci")):
+        os.remove(get_csv_kpi_path("connected", "pci"))
+
+    if os.path.exists(get_csv_kpi_path("connected", "abs_time")):
+        os.remove(get_csv_kpi_path("connected", "abs_time"))
+
+    if os.path.exists(get_csv_kpi_path("connected", "rel_time")):
+        os.remove(get_csv_kpi_path("connected", "rel_time"))
+
+
+
 def process_log(options):
+
+    clean_up_old_logs()
+
     handover_count = 0
     
     data = {}
@@ -110,9 +141,6 @@ def process_log(options):
         for key in data:
             write_to_csv(os.path.join(OUTPUT_FOLDER, key + ".csv"),data[key])
 
-
-
-    
     
     '''
     summary = {}

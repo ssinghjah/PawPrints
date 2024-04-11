@@ -61,9 +61,15 @@ def merge(cell_times, gps_times, mode = MODE, to_csv = False):
         references_times_readable = [datetime.utcfromtimestamp(time/1000.0).strftime('%Y-%m-%d %H:%M:%S.%f') for time in np.arange(start_time, end_time, TIME_STEP)]
         if to_csv:
             common.write_csv(os.path.join(WORKSPACE_FOLDER, "references_times_readable.csv"), references_times_readable)
+
     elif mode == 1:
         gps_merged_time_indices = interpolate_time_log(cell_times, gps_times)
         cell_merged_time_indices = np.arange(0, len(cell_times), 1)
+        
+    elif mode == 2:
+        cell_merged_time_indices = np.array(interpolate_time_log(gps_times, cell_times))
+        gps_merged_time_indices = np.arange(0, len(gps_times), 1)
+
     
     
     if to_csv:

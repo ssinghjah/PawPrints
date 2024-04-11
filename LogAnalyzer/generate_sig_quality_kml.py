@@ -4,29 +4,25 @@ import common
 import simplekml
 import custom_color_maps
 
-LOG_FOLDER = "../Data/"
-BS_PCI = "connected_bs"
-
-RSRP_LOG_PATH = "../Data/" + BS_PCI + "_rsrp.csv"
-RSRQ_LOG_PATH = "../Data/" + BS_PCI + "_rsrq.csv"
-GPS_COORDS_LOG_PATH = "../Data/gps_raw.csv"
-ALTITUDE_LOG_PATH = "../Data/gps_altitude.csv"
-
-GPS_INDICES = "../Data/gps_interpolated_time_indices.csv"
-KPI_INDICES = "../Data/connected_bs_interpolated_time_indices.csv"
+LOG_FOLDER = "./WorkSpace/"
+BS_PCI = "connected"
+LINE_WIDTH = 3
 
 LON_INDEX = 1
 LAT_INDEX = 2
 ALTITUDE_INDEX = 3
 
-LINE_WIDTH = 5
+RSRP_LOG_PATH = "./WorkSpace/Data/" + BS_PCI + "_rsrp.csv"
+RSRQ_LOG_PATH = "./WorkSpace/Data/" + BS_PCI + "_rsrq.csv"
+GPS_COORDS_LOG_PATH = "./WorkSpace/Data/gps.csv"
+
+GPS_INDICES = "./WorkSpace/Data/gps_merged_time_indices.csv"
+KPI_INDICES = "./WorkSpace/Data/cell_merged_time_indices.csv"
 
 rsrp_log = common.read_csv(RSRP_LOG_PATH)
 rsrq_log = common.read_csv(RSRQ_LOG_PATH)
 
 gps_coords = common.read_csv(GPS_COORDS_LOG_PATH)
-gps_altitude = common.read_csv(ALTITUDE_LOG_PATH)
-
 gps_indices = common.read_csv(GPS_INDICES)
 kpi_indices = common.read_csv(KPI_INDICES)
 

@@ -1,5 +1,5 @@
 import common
-from enums import SIG_QUALITY
+from enums import SIG_QUALITY, SIG_QUALITY_COLOR
 
 ordered_bs_s = [76, 219, 198, 192, 171, 31] # BSs in decreasing order of connection duration
 ordered_bs_s.reverse()
@@ -29,10 +29,10 @@ def get_bs_color(id):
 def get_sig_qual_color(rsrp_qual, rsrq_qual):
     color = None
     if rsrq_qual == SIG_QUALITY.POOR or rsrp_qual == SIG_QUALITY.POOR:
-        color = sig_qual_colors[2]
+        color = SIG_QUALITY_COLOR.POOR
     elif rsrq_qual == SIG_QUALITY.ACCEPTABLE and rsrp_qual == SIG_QUALITY.ACCEPTABLE:
-        color = sig_qual_colors[1]
+        color = SIG_QUALITY_COLOR.ACCEPTABLE
     else:
-        color = sig_qual_colors[0]
+        color = SIG_QUALITY_COLOR.GOOD
     return color
 

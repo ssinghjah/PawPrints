@@ -12,39 +12,32 @@ DEFAULT_KPI = "rsrp"
 WORKFOLDER = "../../WorkArea/"
 DEFAULT_GPS_PATH = os.path.join(WORKFOLDER, "gps.csv")
 GPS_TIME_PATH = os.path.join(WORKFOLDER, "gps_abs_time.csv")
-MERGE_MODE = 1 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
+MERGE_MODE = 2 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
 DRAW_TYPE = "point"
 LINE_WIDTH = 3
-USE_PCI_MAP = False
+USE_PCI_MAP = True
 MARKER_WIDTH = 1 
+
 # Constants
 METER_TO_DEGREE = 1/111320.0
 COLOR_MAP = {1: {"r": 0, "g": 0.6, "b": 0} , 2: {"r": 1.0, "g": 0.6, "b": 0.0}}
-WORKSPACE = "./WorkSpace"
 GPS_LON_INDEX = 1
 GPS_LAT_INDEX = 2
 GPS_ALT_INDEX = 3
 GPS_TIME_INDEX = 0
 
 def generate_kml(options):
-    kpi_path = "./WorkSpace/" + options.pci + "_" + options.kpi + ".csv"
+    kpi_path = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".csv")
     gps_path = DEFAULT_GPS_PATH
     
-    kpi_times_path = os.path.join(WORKSPACE, options.pci + "_abs_time.csv")
+    kpi_times_path = os.path.join(WORKFOLDER, options.pci + "_abs_time.csv")
     kpi_times = common.read_csv(kpi_times_path)
-    #gps_times = pd.read_csv(DEFAULT_GPS_PATH)
     gps_times = common.read_csv(GPS_TIME_PATH)
     
     (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, MERGE_MODE)
-    # kpi_indices = np.arange(0, len(kpi_times))
-
-    #kpi_indices = "./WorkSpace/cell_merged_time_indices.csv"
     
     kpi_log = common.read_csv(kpi_path)
     gps_log = common.read_csv(gps_path)
-
-    # gps_indices = common.read_csv(gps_indices)
-    # kpi_indices = common.read_csv(kpi_indices)
 
     # Compare length
     if len(gps_indices) != len(kpi_indices):
@@ -78,7 +71,7 @@ def generate_kml(options):
 
         gps_coord = gps_log[gps_index]
         if DRAW_TYPE == "line":
-            gps_next_coord = gps_log[gps_index+1]
+            gps_next_coord = gps_log[gps_index+1] if (gps_index + 1) < len(gps_times) else gps_log[gps_index]
             geom = kml.newlinestring(coords=[(gps_coord[GPS_LON_INDEX], gps_coord[GPS_LAT_INDEX], gps_coord[GPS_ALT_INDEX]),(gps_next_coord[GPS_LON_INDEX], gps_next_coord[GPS_LAT_INDEX], gps_next_coord[GPS_ALT_INDEX])])
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
             geom.style.linestyle.color = kml_color
@@ -96,7 +89,9 @@ def generate_kml(options):
             geom.style.linestyle.color = kml_color
             geom.style.linestyle.width = LINE_WIDTH
 
-    kml_fName = os.path.join("./WorkSpace/", options.pci + "_" + options.kpi + ".kml")
+    kml_fName = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".kml")
+    print("Number of data points: " + str(numEntries))
+    print("Writing to " + str(kml_fName))
     kml.save(kml_fName)
 
 if __name__ == "__main__":

@@ -2,8 +2,8 @@ import common
 import os
 from datetime import datetime
 
-GPS_RAW_LOG = "./WorkSpace/gps.csv"
-OUTPUT_FOLDER = "./WorkSpace/Data"
+GPS_RAW_LOG = "../../WorkArea/gps.csv"
+OUTPUT_FOLDER = "../../WorkArea/"
 TIME_INDEX = 7
 ALTITUDE_INDEX = 3
 LAT_INDEX = 1
