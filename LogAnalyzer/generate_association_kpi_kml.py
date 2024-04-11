@@ -1,13 +1,17 @@
 import common
 import simplekml
 import os
+import time_merger
 
-KPI_LOG_PATH = "./WorkSpace/Data/connected_rsrq.csv"
-PCI_LOG_PATH = "./WorkSpace/Data/connected_pci.csv"
-GPS_LOG_PATH = "./WorkSpace/Data/gps.csv"
+KPI_LOG_PATH = "./WorkSpace/connected_rssi.csv"
+PCI_LOG_PATH = "./WorkSpace/connected_pci.csv"
+GPS_LOG_PATH = "./WorkSpace/gps.csv"
+KPI_TIME_PATH = "./WorkSpace/connected_abs_time.csv"
+GPS_TIME_PATH = "./WorkSpace/gps_abs_time.csv"
+MERGE_MODE = 0
 
-GPS_INDICES = "./WorkSpace/Data/gps_merged_time_indices.csv"
-KPI_INDICES = "./WorkSpace/Data/cell_merged_time_indices.csv"
+# GPS_INDICES = "./WorkSpace/Data/gps_merged_time_indices.csv"
+# KPI_INDICES = "./WorkSpace/Data/cell_merged_time_indices.csv"
 
 LON_INDEX = 1
 LAT_INDEX = 2
@@ -21,8 +25,14 @@ kpi_log = common.read_csv(KPI_LOG_PATH)
 pci_log = common.read_csv(PCI_LOG_PATH)
 gps_coords = common.read_csv(GPS_LOG_PATH)
 
-gps_indices = common.read_csv(GPS_INDICES)
-kpi_indices = common.read_csv(KPI_INDICES)
+kpi_times = common.read_csv(KPI_TIME_PATH)
+#gps_times = pd.read_csv(DEFAULT_GPS_PATH)
+gps_times = common.read_csv(GPS_TIME_PATH)
+
+(kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, MERGE_MODE)
+
+# gps_indices = common.read_csv(GPS_INDICES)
+# kpi_indices = common.read_csv(KPI_INDICES)
 
 # Compare length
 if len(gps_indices) != len(kpi_indices):
@@ -33,8 +43,11 @@ if len(gps_indices) != len(kpi_indices):
 numEntries = len(gps_indices)
 kml = simplekml.Kml()
 
-kpi_min = min(kpi_log)
-kpi_max = max(kpi_log)
+# kpi_min = min(kpi_log)
+# kpi_max = max(kpi_log)
+
+kpi_min = -75
+kpi_max = -55
 
 # Add a KML line segment with given coordinates. Calculate color as a function of the number. Add color to the line.
 for index in range(numEntries-1):
@@ -54,5 +67,5 @@ for index in range(numEntries-1):
     line.style.linestyle.color = kml_color
     line.style.linestyle.width = LINE_WIDTH
 
-kml_fName = os.path.join(WORKSPACE, "connected_rsrq_pci.kml")
+kml_fName = os.path.join(WORKSPACE, "connected_rssi_pci.kml")
 kml.save(kml_fName)
