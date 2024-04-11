@@ -48,7 +48,7 @@ def hex_to_rgb(hex):
         decimal = int(hex[i:i + 2], 16)/255.0
         rgb.append(decimal)
 
-    return {"r":rgb[0], "g":rgb[1], "b":rgb[2]}
+    return {"r": rgb[0], "g": rgb[1], "b": rgb[2]}
 
 def generate_discrete_color_map(values):
     num_values = len(values)

@@ -1,62 +1,109 @@
 import common
 import simplekml
 import os
+import argparse
+import time_merger
+import pandas as pd
+import numpy as np
 
 # Options
-BS_PCI = "connected"
-KPI = "rsrq"
+DEFAULT_PCI = "connected"
+DEFAULT_KPI = "rsrp"
+WORKFOLDER = "../../WorkArea/"
+DEFAULT_GPS_PATH = os.path.join(WORKFOLDER, "gps.csv")
+GPS_TIME_PATH = os.path.join(WORKFOLDER, "gps_abs_time.csv")
+MERGE_MODE = 1 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
+DRAW_TYPE = "point"
 LINE_WIDTH = 3
 USE_PCI_MAP = False
-
+MARKER_WIDTH = 1 
 # Constants
-KPI_LOG_PATH = "./WorkSpace/Data/" + BS_PCI + "_" + KPI + ".csv"
-GPS_LOG_PATH = "./WorkSpace/Data/gps.csv"
-GPS_INDICES = "./WorkSpace/Data/gps_merged_time_indices.csv"
-KPI_INDICES = "./WorkSpace/Data/cell_merged_time_indices.csv"
-LON_INDEX = 1
-LAT_INDEX = 2
-ALTITUDE_INDEX = 3
-WORKSPACE = "./WorkSpace/"
+METER_TO_DEGREE = 1/111320.0
+COLOR_MAP = {1: {"r": 0, "g": 0.6, "b": 0} , 2: {"r": 1.0, "g": 0.6, "b": 0.0}}
+WORKSPACE = "./WorkSpace"
+GPS_LON_INDEX = 1
+GPS_LAT_INDEX = 2
+GPS_ALT_INDEX = 3
+GPS_TIME_INDEX = 0
 
-kpi_log = common.read_csv(KPI_LOG_PATH)
-gps_coords = common.read_csv(GPS_LOG_PATH)
+def generate_kml(options):
+    kpi_path = "./WorkSpace/" + options.pci + "_" + options.kpi + ".csv"
+    gps_path = DEFAULT_GPS_PATH
+    
+    kpi_times_path = os.path.join(WORKSPACE, options.pci + "_abs_time.csv")
+    kpi_times = common.read_csv(kpi_times_path)
+    #gps_times = pd.read_csv(DEFAULT_GPS_PATH)
+    gps_times = common.read_csv(GPS_TIME_PATH)
+    
+    (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, MERGE_MODE)
+    # kpi_indices = np.arange(0, len(kpi_times))
 
-gps_indices = common.read_csv(GPS_INDICES)
-kpi_indices = common.read_csv(KPI_INDICES)
+    #kpi_indices = "./WorkSpace/cell_merged_time_indices.csv"
+    
+    kpi_log = common.read_csv(kpi_path)
+    gps_log = common.read_csv(gps_path)
 
-# Compare length
-if len(gps_indices) != len(kpi_indices):
-    print("Error. Count of KPI Indices does not match that of GPS indices")
-    exit
+    # gps_indices = common.read_csv(gps_indices)
+    # kpi_indices = common.read_csv(kpi_indices)
 
-# Iterate length-1 times
-numEntries = len(gps_indices)
-kml = simplekml.Kml()
+    # Compare length
+    if len(gps_indices) != len(kpi_indices):
+        print("Error. Count of KPI Indices does not match that of GPS indices")
+        exit
 
-kpi_min = min(kpi_log)
-kpi_max = max(kpi_log)
+    # Iterate length-1 times
+    numEntries = len(gps_indices)
+    kml = simplekml.Kml()
 
-color_map = {1: {"r": 0, "g": 0.6, "b": 0} , 2: {"r": 1.0, "g": 0.6, "b": 0.0}}
+    kpi_min = min(kpi_log)
+    kpi_max = max(kpi_log)
+    kpi_min = -98
+    kpi_max = -75
 
-# Add a KML line segment with given coordinates. Calculate color as a function of the KPI. Add color to the line.
-for index in range(numEntries-1):
-    kpi_index = kpi_indices[index]
-    gps_index = gps_indices[index]
-    kpi = kpi_log[kpi_index]
-    gps_coord = gps_coords[gps_index]
-    gps_next_coord = gps_coords[gps_index+1]
-    line = kml.newlinestring(coords=[(gps_coord[LON_INDEX], gps_coord[LAT_INDEX], gps_coord[ALTITUDE_INDEX]),(gps_next_coord[LON_INDEX], gps_next_coord[LAT_INDEX], gps_next_coord[ALTITUDE_INDEX])])
-    line.altitudemode = simplekml.AltitudeMode.relativetoground
-    if USE_PCI_MAP:
-        if kpi in color_map:
-            color = color_map[kpi]
+    # Add a KML line segment with given coordinates. Calculate color as a function of the KPI. Add color to the line.
+    for index in range(numEntries-1):
+        kpi_index = kpi_indices[index]
+        gps_index = gps_indices[index]
+        kpi = kpi_log[kpi_index]
+
+        if USE_PCI_MAP:
+            if kpi in COLOR_MAP:
+                color = COLOR_MAP[kpi]
+            else:
+                color = {"r": 0, "g": 0, "b": 0}
         else:
-            color = {"r": 0, "g": 0, "b": 0}
-    else:
-        color = common.value_to_color(kpi, kpi_min, kpi_max)
-    kml_color = simplekml.Color.rgb(round(color["r"]*255), round(color["g"]*255), round(color["b"]*255))
-    line.style.linestyle.color = kml_color
-    line.style.linestyle.width = LINE_WIDTH
+            color = common.value_to_color(kpi, kpi_min, kpi_max)
 
-kml_fName = os.path.join(WORKSPACE, BS_PCI + "_" + KPI + ".kml")
-kml.save(kml_fName)
+        kml_color = simplekml.Color.rgb(round(color["r"]*255), round(color["g"]*255), round(color["b"]*255))
+
+        gps_coord = gps_log[gps_index]
+        if DRAW_TYPE == "line":
+            gps_next_coord = gps_log[gps_index+1]
+            geom = kml.newlinestring(coords=[(gps_coord[GPS_LON_INDEX], gps_coord[GPS_LAT_INDEX], gps_coord[GPS_ALT_INDEX]),(gps_next_coord[GPS_LON_INDEX], gps_next_coord[GPS_LAT_INDEX], gps_next_coord[GPS_ALT_INDEX])])
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.style.linestyle.color = kml_color
+            geom.style.linestyle.width = LINE_WIDTH
+
+        elif DRAW_TYPE == "point":
+            geom = kml.newpolygon()
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.outerboundaryis = [(gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
+                                    (gps_coord[GPS_LON_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]), 
+                                    (gps_coord[GPS_LON_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
+                                    (gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
+                                    (gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX])]
+            geom.style.polystyle.color = kml_color
+            geom.style.linestyle.color = kml_color
+            geom.style.linestyle.width = LINE_WIDTH
+
+    kml_fName = os.path.join("./WorkSpace/", options.pci + "_" + options.kpi + ".kml")
+    kml.save(kml_fName)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate KML file of the specified KPI and cell PCI')
+    parser.add_argument('-k', '--kpi', type=str, default = DEFAULT_KPI, help="KPI to plot. Default is " + DEFAULT_KPI )
+    parser.add_argument('-p', '--pci', type = str, default = DEFAULT_PCI, help="PCI of the chosen cell. Default is " + DEFAULT_PCI)    
+    parser.add_argument('-g', '--gps', type = str, default = DEFAULT_GPS_PATH, help="GPS log path. Default is " + DEFAULT_GPS_PATH)    
+    parser.add_argument('-m', '--mergemode', type=int, default = 0, help="Merge mode. 0 = use a third reference time scale. 1 = use cellular.")
+    options = parser.parse_args()
+    generate_kml(options)
