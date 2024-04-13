@@ -14,7 +14,7 @@ WORKFOLDER = "../../WorkArea/"
 DEFAULT_GPS_PATH = os.path.join(WORKFOLDER, "gps.csv")
 GPS_TIME_PATH = os.path.join(WORKFOLDER, "gps_abs_time.csv")
 DEFAULT_MERGE_MODE = 2 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
-DRAW_TYPE = "line"
+DRAW_TYPE = "line, point"
 LINE_WIDTH = 5
 USE_PCI_MAP = False
 MARKER_WIDTH = 2 
@@ -22,10 +22,10 @@ MARKER_WIDTH = 2
 # Constants
 METER_TO_DEGREE = 1/111320.0
 COLOR_MAP = {1: {"r": 0, "g": 0.6, "b": 0} , 2: {"r": 1.0, "g": 0.6, "b": 0.0}}
-GPS_LON_INDEX = 1
-GPS_LAT_INDEX = 2
+LON_INDEX = 1
+LAT_INDEX = 2
 GPS_ALT_INDEX = 3
-GPS_TIME_INDEX = 0
+TIME_INDEX = 0
 
 def generate_kml(options):
     kpi_path = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".csv")
@@ -76,24 +76,26 @@ def generate_kml(options):
 
         if "line" in DRAW_TYPE:
             gps_next_coord = gps_log[gps_index+1] if (gps_index + 1) < len(gps_times) else gps_log[gps_index]
-            geom = kml.newlinestring(coords=[(gps_coord[GPS_LON_INDEX], gps_coord[GPS_LAT_INDEX], gps_coord[GPS_ALT_INDEX]),(gps_next_coord[GPS_LON_INDEX], gps_next_coord[GPS_LAT_INDEX], gps_next_coord[GPS_ALT_INDEX])])
+            geom = kml.newlinestring(coords=[(gps_coord[LON_INDEX], gps_coord[LAT_INDEX], gps_coord[GPS_ALT_INDEX]),(gps_next_coord[LON_INDEX], gps_next_coord[LAT_INDEX], gps_next_coord[GPS_ALT_INDEX])])
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
             geom.style.linestyle.color = kml_color
             geom.style.linestyle.width = LINE_WIDTH
-            geom.description = f'<bold>{options.kpi}</bold> = {kpi} {options.kpi_units}'
+            geom.description = f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({gps_coord[LAT_INDEX]},{gps_coord[LON_INDEX]})</p><p> altitude = {gps_coord[GPS_ALT_INDEX]} m</p>'
         
 
         if "point" in DRAW_TYPE:
             geom = kml.newpolygon()
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
-            geom.outerboundaryis = [(gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
-                                    (gps_coord[GPS_LON_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]), 
-                                    (gps_coord[GPS_LON_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
-                                    (gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
-                                    (gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX])]
+            geom.outerboundaryis = [(gps_coord[LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
+                                    (gps_coord[LON_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]), 
+                                    (gps_coord[LON_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[LAT_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
+                                    (gps_coord[LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[LAT_INDEX] + 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
+                                    (gps_coord[LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX])]
             geom.style.polystyle.color = kml_color
             geom.style.linestyle.color = kml_color
-            geom.style.linestyle.width = LINE_WIDTH
+            geom.style.linestyle.width = MARKER_WIDTH
+            geom.description = f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({gps_coord[LAT_INDEX]},{gps_coord[LON_INDEX]})</p><p> altitude = {gps_coord[GPS_ALT_INDEX]} m</p>'
+
 
 
     kml_fName = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".kml")
