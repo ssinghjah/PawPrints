@@ -9,14 +9,15 @@ import numpy as np
 # Options
 DEFAULT_PCI = "connected"
 DEFAULT_KPI = "rsrp"
+DEFAULT_KPI_UNITS = "dBm"
 WORKFOLDER = "../../WorkArea/"
 DEFAULT_GPS_PATH = os.path.join(WORKFOLDER, "gps.csv")
 GPS_TIME_PATH = os.path.join(WORKFOLDER, "gps_abs_time.csv")
-MERGE_MODE = 2 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
-DRAW_TYPE = "point"
-LINE_WIDTH = 3
-USE_PCI_MAP = True
-MARKER_WIDTH = 1 
+DEFAULT_MERGE_MODE = 2 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
+DRAW_TYPE = "line"
+LINE_WIDTH = 5
+USE_PCI_MAP = False
+MARKER_WIDTH = 2 
 
 # Constants
 METER_TO_DEGREE = 1/111320.0
@@ -34,10 +35,12 @@ def generate_kml(options):
     kpi_times = common.read_csv(kpi_times_path)
     gps_times = common.read_csv(GPS_TIME_PATH)
     
-    (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, MERGE_MODE)
+    (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, options.mergemode)
     
     kpi_log = common.read_csv(kpi_path)
     gps_log = common.read_csv(gps_path)
+
+    print(len(kpi_log), len(kpi_indices), len(gps_indices))
 
     # Compare length
     if len(gps_indices) != len(kpi_indices):
@@ -50,8 +53,8 @@ def generate_kml(options):
 
     kpi_min = min(kpi_log)
     kpi_max = max(kpi_log)
-    kpi_min = -98
-    kpi_max = -75
+    kpi_min = 200
+    kpi_max = 600
 
     # Add a KML line segment with given coordinates. Calculate color as a function of the KPI. Add color to the line.
     for index in range(numEntries-1):
@@ -70,14 +73,17 @@ def generate_kml(options):
         kml_color = simplekml.Color.rgb(round(color["r"]*255), round(color["g"]*255), round(color["b"]*255))
 
         gps_coord = gps_log[gps_index]
-        if DRAW_TYPE == "line":
+
+        if "line" in DRAW_TYPE:
             gps_next_coord = gps_log[gps_index+1] if (gps_index + 1) < len(gps_times) else gps_log[gps_index]
             geom = kml.newlinestring(coords=[(gps_coord[GPS_LON_INDEX], gps_coord[GPS_LAT_INDEX], gps_coord[GPS_ALT_INDEX]),(gps_next_coord[GPS_LON_INDEX], gps_next_coord[GPS_LAT_INDEX], gps_next_coord[GPS_ALT_INDEX])])
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
             geom.style.linestyle.color = kml_color
             geom.style.linestyle.width = LINE_WIDTH
+            geom.description = f'<bold>{options.kpi}</bold> = {kpi} {options.kpi_units}'
+        
 
-        elif DRAW_TYPE == "point":
+        if "point" in DRAW_TYPE:
             geom = kml.newpolygon()
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
             geom.outerboundaryis = [(gps_coord[GPS_LON_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_LAT_INDEX] - 0.5*MARKER_WIDTH*METER_TO_DEGREE, gps_coord[GPS_ALT_INDEX]),
@@ -89,6 +95,7 @@ def generate_kml(options):
             geom.style.linestyle.color = kml_color
             geom.style.linestyle.width = LINE_WIDTH
 
+
     kml_fName = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".kml")
     print("Number of data points: " + str(numEntries))
     print("Writing to " + str(kml_fName))
@@ -99,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument('-k', '--kpi', type=str, default = DEFAULT_KPI, help="KPI to plot. Default is " + DEFAULT_KPI )
     parser.add_argument('-p', '--pci', type = str, default = DEFAULT_PCI, help="PCI of the chosen cell. Default is " + DEFAULT_PCI)    
     parser.add_argument('-g', '--gps', type = str, default = DEFAULT_GPS_PATH, help="GPS log path. Default is " + DEFAULT_GPS_PATH)    
-    parser.add_argument('-m', '--mergemode', type=int, default = 0, help="Merge mode. 0 = use a third reference time scale. 1 = use cellular.")
+    parser.add_argument('-m', '--mergemode', type=int, default = DEFAULT_MERGE_MODE, help="Merge mode. 0 = use a third reference time scale. 1 = use cellular.")
+    parser.add_argument('-u', '--kpi-units', type=str, default=DEFAULT_KPI_UNITS, help= "KPI units. Default is dBm, for RSRP.")
     options = parser.parse_args()
     generate_kml(options)
