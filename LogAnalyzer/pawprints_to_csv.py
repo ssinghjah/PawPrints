@@ -6,10 +6,10 @@ import json
 import pandas
 import argparse
 
-OUTPUT_FOLDER = "../../WorkArea/"
+OUTPUT_FOLDER = "../../ExperimentData/April_9_2024_Lake_Wheeler_Flight1/"
 
 # Default Options
-PAWPRINTS_LOG_PATH = "../../WorkArea/pawprints.jsonl"
+PAWPRINTS_LOG_PATH = "../../ExperimentData/April_9_2024_Lake_Wheeler_Flight1/pawprints.jsonl"
 MERGE_DEFAULT = "per-cell-kpi" # Can be all or per-cell or per-cell-kpi
 OUTPUT_CSV_PREFIX = ""
 OUTPUT_DEFAULT = "csv"
@@ -70,7 +70,7 @@ def process_log_row(log_row, data, options):
                             data["connected_" + kpi] = []
                         data["connected_" + kpi].append(connected_cell[kpi])
 
-            if "nr_signal_strength" in log_row:
+            if "nr_signal_strength" in log_row and len(log_row['nr_signal_strength'].keys()) > 1:
                 nr_sig_strength = log_row["nr_signal_strength"]
                 if "nr_signal_strength_rel_time" not in data:
                     data["nr_signal_strength_rel_time"] = []
