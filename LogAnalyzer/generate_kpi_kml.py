@@ -9,11 +9,10 @@ import numpy as np
 # Options
 DEFAULT_PCI = "connected"
 DEFAULT_KPI = "rsrp"
-DEFAULT_KPI_UNITS = "dBm"
-WORKFOLDER = "../../WorkArea/"
-DEFAULT_GPS_PATH = os.path.join(WORKFOLDER, "gps.csv")
-GPS_TIME_PATH = os.path.join(WORKFOLDER, "gps_abs_time.csv")
-DEFAULT_MERGE_MODE = 2 # Merge mode. 0 = use a third reference time scale. 1 = use cellular.
+DEFAULT_KPI_UNITS = ""
+DEFAULT_WORKFOLDER = "../../WorkArea/"
+
+DEFAULT_MERGE_MODE = 1 # Merge mode. 0 = use a third reference time scale. 1 = use cellular. 2 = use gps
 DRAW_TYPE = "line, point"
 LINE_WIDTH = 5
 USE_PCI_MAP = False
@@ -28,14 +27,15 @@ GPS_ALT_INDEX = 3
 TIME_INDEX = 0
 
 def generate_kml(options):
-    kpi_path = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".csv")
-    gps_path = DEFAULT_GPS_PATH
+    kpi_path = os.path.join(options.workarea, options.pci + "_" + options.kpi + ".csv")
+    gps_path = os.path.join(options.workarea, "gps.csv")
+    gps_time_path = os.path.join(options.workarea, "gps_abs_time.csv")
     
-    kpi_times_path = os.path.join(WORKFOLDER, options.pci + "_abs_time.csv")
+    kpi_times_path = os.path.join(options.workarea, options.pci + "_abs_time.csv")
     kpi_times = common.read_csv(kpi_times_path)
-    gps_times = common.read_csv(GPS_TIME_PATH)
+    gps_times = common.read_csv(gps_time_path)
     
-    (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, options.mergemode)
+    (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, options.merge_mode)
     
     kpi_log = common.read_csv(kpi_path)
     gps_log = common.read_csv(gps_path)
@@ -51,10 +51,11 @@ def generate_kml(options):
     numEntries = len(gps_indices)
     kml = simplekml.Kml()
 
-    kpi_min = min(kpi_log)
-    kpi_max = max(kpi_log)
-    kpi_min = 200
-    kpi_max = 600
+
+    kpi_min = min(kpi_log) if options.kpi_min == None else options.kpi_min
+    kpi_max = max(kpi_log) if options.kpi_max == None else options.kpi_max
+    # kpi_min = 200
+    # kpi_max = 600
 
     # Add a KML line segment with given coordinates. Calculate color as a function of the KPI. Add color to the line.
     for index in range(numEntries-1):
@@ -62,7 +63,7 @@ def generate_kml(options):
         gps_index = gps_indices[index]
         kpi = kpi_log[kpi_index]
 
-        if USE_PCI_MAP:
+        if options.use_pci_colormap:
             if kpi in COLOR_MAP:
                 color = COLOR_MAP[kpi]
             else:
@@ -82,7 +83,6 @@ def generate_kml(options):
             geom.style.linestyle.width = LINE_WIDTH
             geom.description = f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({gps_coord[LAT_INDEX]},{gps_coord[LON_INDEX]})</p><p> altitude = {gps_coord[GPS_ALT_INDEX]} m</p>'
         
-
         if "point" in DRAW_TYPE:
             geom = kml.newpolygon()
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
@@ -96,9 +96,7 @@ def generate_kml(options):
             geom.style.linestyle.width = MARKER_WIDTH
             geom.description = f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({gps_coord[LAT_INDEX]},{gps_coord[LON_INDEX]})</p><p> altitude = {gps_coord[GPS_ALT_INDEX]} m</p>'
 
-
-
-    kml_fName = os.path.join(WORKFOLDER, options.pci + "_" + options.kpi + ".kml")
+    kml_fName = os.path.join(options.workarea, options.pci + "_" + options.kpi + ".kml")
     print("Number of data points: " + str(numEntries))
     print("Writing to " + str(kml_fName))
     kml.save(kml_fName)
@@ -106,9 +104,12 @@ def generate_kml(options):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate KML file of the specified KPI and cell PCI')
     parser.add_argument('-k', '--kpi', type=str, default = DEFAULT_KPI, help="KPI to plot. Default is " + DEFAULT_KPI )
+    parser.add_argument('--kpi-min', type=float, default = None, help="Minimum value of the KPI color bar. Default is minimum of all KPIs.")
+    parser.add_argument('--kpi-max', type=float, default = None, help="Maximum value of the KPI color bar. Default is maximum of all KPIs.")
     parser.add_argument('-p', '--pci', type = str, default = DEFAULT_PCI, help="PCI of the chosen cell. Default is " + DEFAULT_PCI)    
-    parser.add_argument('-g', '--gps', type = str, default = DEFAULT_GPS_PATH, help="GPS log path. Default is " + DEFAULT_GPS_PATH)    
-    parser.add_argument('-m', '--mergemode', type=int, default = DEFAULT_MERGE_MODE, help="Merge mode. 0 = use a third reference time scale. 1 = use cellular.")
+    parser.add_argument('--use-pci-colormap', action="store_true", help="Specifies whether to use a provided PCI color map.")
+    parser.add_argument('-w', '--workarea', type = str, default = DEFAULT_WORKFOLDER, help="Workarea path, containing radio, vehicle and traffic logs. Default is " + DEFAULT_WORKFOLDER)    
+    parser.add_argument('-m', '--merge-mode', type=int, default = DEFAULT_MERGE_MODE, help="Merge mode. 0 = use a third reference time scale. 1 = use cellular.")
     parser.add_argument('-u', '--kpi-units', type=str, default=DEFAULT_KPI_UNITS, help= "KPI units. Default is dBm, for RSRP.")
     options = parser.parse_args()
     generate_kml(options)
