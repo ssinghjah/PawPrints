@@ -104,12 +104,12 @@ def value_to_color(v, vmin, vmax, colormap = None):
         color["g"] = 4 * (v - vmin) /dv;
     elif (v < (vmin + 0.5 * dv)):
         color["r"] = 0;
-        color["b"] = 1 + 4 * (vmin + 0.25 * dv - v) /dv
+        color["b"] = 1 + 4 * (vmin + 0.25 * dv - v) / dv
     elif (v < (vmin + 0.75 * dv)):
-        color["r"] = 4 * (v - vmin - 0.5 * dv) /dv
+        color["r"] = 4 * (v - vmin - 0.5 * dv) / dv
         color["b"] = 0
     else:
-        color["g"] = 1 + 4 * (vmin + 0.75 * dv - v) /dv
+        color["g"] = 1 + 4 * (vmin + 0.75 * dv - v) / dv
         color["b"] = 0
     return color
 

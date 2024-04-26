@@ -10,7 +10,7 @@ WORKSPACE_FOLDER = "./WorkSpace"
 CELL_TIMES = "./WorkSpace/353_abs_time.csv"
 GPS_TIMES = "./WorkSpace/gps_abs_time.csv"
 TIME_STEP = 1000 # In milliseconds
-MODE = 1
+MODE = 1 # Mode = 1, use first source as reference, Mode = 2: use second source as reference. Mode = 0: use a third reference time scale, give start, end and interval
 
 def interpolate_time_log_third_ref(start_time, end_time, time_log):
     interpolated_indices = []
@@ -70,7 +70,6 @@ def merge(cell_times, gps_times, mode = MODE, to_csv = False):
         cell_merged_time_indices = np.array(interpolate_time_log(gps_times, cell_times))
         gps_merged_time_indices = np.arange(0, len(gps_times), 1)
 
-    
     
     if to_csv:
         common.write_csv(os.path.join(WORKSPACE_FOLDER,"cell_merged_time_indices.csv"), cell_merged_time_indices)
