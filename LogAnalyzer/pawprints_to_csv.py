@@ -50,25 +50,32 @@ def process_log_row(log_row, data, options):
             abs_time = log_row["companion_abs_time"]
             rel_time = log_row["rel_time"]
 
+            connected_pci = log_row["connected_pci"]
+            connected_index = -1
+            cell_index = 0 
             for cell in log_row["cells"]:
                 if (str(cell["pci"]) + "_rel_time") not in data:
                     data[str(cell["pci"]) + "_rel_time"] = []
                     data[str(cell["pci"]) + "_abs_time"] = []
                 data[str(cell["pci"]) + "_rel_time"].append(rel_time) 
-                data[str(cell["pci"]) + "_abs_time"].append(abs_time)       
+                data[str(cell["pci"]) + "_abs_time"].append(abs_time)     
+                if cell["pci"] == connected_pci:
+                    connected_index = cell_index   
                 for kpi in cell:
                     if kpi != "pci":
                         key = cell["pci"] + "_" + kpi
                         if key not in data:
                             data[key] = []
-                        data[key].append(cell[kpi])           
+                        data[key].append(cell[kpi])
+                cell_index += 1
+
+                               
 
             # Write connected cell logs
-            connected_pci = log_row["connected_pci"]
             append_to_csv(get_csv_kpi_path("connected", "pci", options.output), connected_pci)
             append_to_csv(get_csv_kpi_path("connected", "abs_time", options.output), abs_time)
             append_to_csv(get_csv_kpi_path("connected","rel_time", options.output), rel_time)
-            connected_index = 0
+            # connected_index = 0
             #connected_index = log_row["connected_index"]
             if connected_pci != -1:
                 connected_cell = log_row["cells"][connected_index]
@@ -175,11 +182,12 @@ def merge_logs(data, options, config):
         cell_info["latitude"] = gps_data.iloc[gps_indices, config["gps"]["lat_index"]].to_list()
         cell_info["altitude"] = gps_data.iloc[gps_indices, config["gps"]["alt_index"]].to_list()
 
-        nr_signal_strength_times = nr_signal_strength["companion_abs_time"] if "companion_abs_time" in nr_signal_strength else nr_signal_strength["phone_abs_time"]
-        nr_signal_strength_indices, gps_indices = time_merger.merge(nr_signal_strength_times, gps_data["gps_times"], mode=1)
-        nr_signal_strength["longitude"] = gps_data.iloc[gps_indices, config["gps"]["lon_index"]].to_list()
-        nr_signal_strength["latitude"] = gps_data.iloc[gps_indices, config["gps"]["lat_index"]].to_list()
-        nr_signal_strength["altitude"] = gps_data.iloc[gps_indices, config["gps"]["alt_index"]].to_list()
+        if not nr_signal_strength.empty:
+            nr_signal_strength_times = nr_signal_strength["companion_abs_time"] if "companion_abs_time" in nr_signal_strength else nr_signal_strength["phone_abs_time"]
+            nr_signal_strength_indices, gps_indices = time_merger.merge(nr_signal_strength_times, gps_data["gps_times"], mode=1)
+            nr_signal_strength["longitude"] = gps_data.iloc[gps_indices, config["gps"]["lon_index"]].to_list()
+            nr_signal_strength["latitude"] = gps_data.iloc[gps_indices, config["gps"]["lat_index"]].to_list()
+            nr_signal_strength["altitude"] = gps_data.iloc[gps_indices, config["gps"]["alt_index"]].to_list()
 
     if bMergeIPerf:        
         # get iperf indices using pawprints indices as a reference. Threshold for interpolation? if time_delay > x seconds, do not interpolate.
@@ -234,10 +242,11 @@ def process_log(options, config):
         output_path = os.path.join(options.output, "pawprints_all.csv")
         print("Writing to " + output_path)
         data["cell_info"].to_csv(output_path, index=False)
-
-        output_path = os.path.join(options.output, "pawprints_5G_signal_strength.csv")
-        print("Writing to " + output_path)
-        data["nr_signal_strength"].to_csv(output_path, index=False)
+        
+        if not data["nr_signal_strength"].empty:
+            output_path = os.path.join(options.output, "pawprints_5G_signal_strength.csv")
+            print("Writing to " + output_path)
+            data["nr_signal_strength"].to_csv(output_path, index=False)
     
     if options.output_format == "csv" and options.mergemode == "per-cell-kpi":
         for key in data:
