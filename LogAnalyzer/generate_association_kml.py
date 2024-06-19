@@ -1,19 +1,21 @@
 import numpy as np
 
 import common
+import os
 import simplekml
 import custom_color_maps
 
-LOG_FOLDER = "./Data/"
-BS_PCI = "connected_bs"
+# Options
+LOG_FOLDER = "../../WorkArea/"
+BS_PCI = "connected_"
 KPI = "pci"
 
-KPI_LOG_PATH = "./Data/" + BS_PCI + "_" + KPI + ".csv"
-GPS_COORDS_LOG_PATH = "./Data/gps_raw.csv"
-ALTITUDE_LOG_PATH = "./Data/gps_altitude.csv"
+KPI_LOG_PATH = os.path.join(LOG_FOLDER, BS_PCI + "_" + KPI + ".csv")
+GPS_COORDS_LOG_PATH = os.path.join(LOG_FOLDER, "gps_raw.csv")
+ALTITUDE_LOG_PATH = os.path.join(LOG_FOLDER, "gps_altitude.csv")
 
-GPS_INDICES = "./Data/gps_interpolated_time_indices.csv"
-KPI_INDICES = "./Data/connected_bs_interpolated_time_indices.csv"
+GPS_INDICES = os.path.join(LOG_FOLDER, "gps_interpolated_time_indices.csv")
+KPI_INDICES = os.path.join(LOG_FOLDER, "connected_bs_interpolated_time_indices.csv")
 
 LON_INDEX = 1
 LAT_INDEX = 2

@@ -69,8 +69,6 @@ def process_log_row(log_row, data, options):
                         data[key].append(cell[kpi])
                 cell_index += 1
 
-                               
-
             # Write connected cell logs
             append_to_csv(get_csv_kpi_path("connected", "pci", options.output), connected_pci)
             append_to_csv(get_csv_kpi_path("connected", "abs_time", options.output), abs_time)
@@ -171,9 +169,11 @@ def merge_logs(data, options, config):
     if bMergeIPerf:
           iperf_data = process_iperf_log.process_log(options.iperf_log)
           iperf_times = iperf_data["abs_time"]
+          print(options.iperf_log)
 
     # Specific operations
     if bMergeGPS:
+        print("Merging GPS ...")
         # get gps_indices using pawprints time as a reference. Threshold for interpolation? if time_delay > x seconds, do not interpolate.
         cell_indices, gps_indices = time_merger.merge(cell_info_times, gps_data["gps_times"], mode=1)
 
@@ -189,19 +189,21 @@ def merge_logs(data, options, config):
             nr_signal_strength["latitude"] = gps_data.iloc[gps_indices, config["gps"]["lat_index"]].to_list()
             nr_signal_strength["altitude"] = gps_data.iloc[gps_indices, config["gps"]["alt_index"]].to_list()
 
-    if bMergeIPerf:        
+    if bMergeIPerf:   
+        print("Merging Iperf ...")     
         # get iperf indices using pawprints indices as a reference. Threshold for interpolation? if time_delay > x seconds, do not interpolate.
         cell_indices, iperf_indices = time_merger.merge(cell_info_times, iperf_times, mode=1)
 
         # generate  columns of gps lat, lon, altitude using gps_indices
-        cell_info["iperf_client_mbps"] = [iperf_data["throughput"][i] for i in iperf_indices]
+        cell_info["iperf_client_mbps"] = [iperf_data["iperf_client_mbps"][i] for i in iperf_indices]
         # cell_info["iperf_client_cwnd"] = iperf_data.iloc[iperf_indices, "cwnd"].to_list()
 
         nr_signal_strength_indices, iperf_indices = time_merger.merge(nr_signal_strength_times, iperf_times, mode=1)
-        nr_signal_strength["iperf_client_mbps"] = [iperf_data["throughput"][i] for i in iperf_indices]
+        nr_signal_strength["iperf_client_mbps"] = [iperf_data["iperf_client_mbps"][i] for i in iperf_indices]
         # nr_signal_strength["iperf_client_cwnd"] = iperf_data.iloc[iperf_indices, "cwnd"].to_list()   
 
     if bMergeIPerf and bMergeGPS:
+        print("Merging Iperf & GPS ...")     
         iperf_indices, gps_indices = time_merger.merge(iperf_times, gps_data["gps_times"], mode=1)
         iperf_data["longitude"] = gps_data.iloc[gps_indices, config["gps"]["lon_index"]].to_list()
         iperf_data["latitude"] = gps_data.iloc[gps_indices, config["gps"]["lat_index"]].to_list()
@@ -271,7 +273,7 @@ def process_log(options, config):
 def main():
     parser = argparse.ArgumentParser(description='Convert PawPrints log into .csv.')
     parser.add_argument('-i', '--input', type = str, default = PAWPRINTS_LOG_PATH, help='Input pawprints log file')
-    parser.add_argument('--iperf-log', type = str, default = None, help='Standard Iperf client log file')
+    parser.add_argument('--iperf-log', type = str, default = None, help='Path to iperf client log file')
     parser.add_argument('-g', '--gps-log', type = str, default = None, help='GPS log file')
     parser.add_argument('-p', '--csvprefix', type=str, default=OUTPUT_CSV_PREFIX, help="Prefix of the output csv file(s)")
     parser.add_argument('-m', '--mergemode', type = str, default = MERGE_DEFAULT, help='Options to merge the output CSV. "all" = creates one csv containing all kpis of all cell. "per-cell-kpi" = creates multiple csvs, one for each kpi of all cell')

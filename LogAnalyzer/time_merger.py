@@ -30,9 +30,15 @@ def interpolate_time_log_third_ref(start_time, end_time, time_log):
         interpolated_indices.append(int(curr_index))
     return interpolated_indices
 
-def interpolate_time_log(source_log, time_log):
+def interpolate_time_log(source_log, time_log, bIntersect):
+    if bIntersect:
+            intersectTimeLogs(source_log, time_log)
+
     interpolated_indices = []
     curr_index = 0
+    if bIntersect:
+        start = max(min(source_log), min(time_log))
+        end = min(max(source_log), min(time_log))
     for ref_time in source_log:
         # Time increases monotonically. So, step towards the ref time, until the next time is farther from the target, rather than the current time.
         index_found = False
@@ -48,7 +54,20 @@ def interpolate_time_log(source_log, time_log):
         interpolated_indices.append(int(curr_index))
     return interpolated_indices
 
-def merge(cell_times, gps_times, mode = MODE, to_csv = False):
+
+def intersectTimeLogs(reference, other):
+    while min(reference) < min(other):
+        reference.pop(0)
+    
+    while max(reference) > max(other):
+        reference.pop()
+
+def merge_csv(df1, df2, timeIndex1, timeIndex2, bIntersect=False, mode = MODE, to_csv = False):
+    indices1, indices2 = merge(df1[timeIndex1].to_list(), df2[timeIndex2], bIntersect, mode, to_csv)
+    for column_name in df2.columns: 
+        df1[column_name] = df2.iloc[indices2][column_name].to_list()
+     
+def merge(cell_times, gps_times, bIntersect=False, mode = MODE, to_csv = False):
     cell_merged_time_indices = []
     gps_merged_time_indices = []
     
@@ -63,13 +82,12 @@ def merge(cell_times, gps_times, mode = MODE, to_csv = False):
             common.write_csv(os.path.join(WORKSPACE_FOLDER, "references_times_readable.csv"), references_times_readable)
 
     elif mode == 1:
-        gps_merged_time_indices = interpolate_time_log(cell_times, gps_times)
+        gps_merged_time_indices = interpolate_time_log(cell_times, gps_times, bIntersect)
         cell_merged_time_indices = np.arange(0, len(cell_times), 1)
         
     elif mode == 2:
         cell_merged_time_indices = np.array(interpolate_time_log(gps_times, cell_times))
         gps_merged_time_indices = np.arange(0, len(gps_times), 1)
-
     
     if to_csv:
         common.write_csv(os.path.join(WORKSPACE_FOLDER,"cell_merged_time_indices.csv"), cell_merged_time_indices)
@@ -79,7 +97,6 @@ def merge(cell_times, gps_times, mode = MODE, to_csv = False):
         gps_merged_readable = [datetime.utcfromtimestamp(gps_times[index]/1000.0).strftime('%Y-%m-%d %H:%M:%S.%f') for index in gps_merged_time_indices]
         common.write_csv(os.path.join(WORKSPACE_FOLDER, "cell_merged_readable.csv"), cell_merged_readable)
         common.write_csv(os.path.join(WORKSPACE_FOLDER, "gps_merged_readable.csv"), gps_merged_readable)
-
 
     return (cell_merged_time_indices, gps_merged_time_indices)
 

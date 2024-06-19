@@ -7,10 +7,11 @@ font = {'family' : 'normal',
         'weight' : 'bold',
         'size'   : 30}
 
-V_MIN = -75
-V_MAX = -55
+V_MIN = 0
+V_MAX = 10
 DECIMAL_STEPS = 5
-MY_MAP = "Oranges"
+TICK_STEP = 2.5
+MY_MAP = "jet"
 LABEL = "RSSI (dBm)"
 FONT_SIZE = 34
 
@@ -42,7 +43,6 @@ cb1.set_ticks(np.arange(V_MIN, V_MAX, DECIMAL_STEPS))
 cb1.ax.tick_params(labelsize=FONT_SIZE) 
 
 ticks = [V_MIN]
-TICK_STEP = 5
 for v_tick in np.arange(V_MIN + TICK_STEP, V_MAX, TICK_STEP):
     ticks.append(v_tick)
 ticks.append(V_MAX)

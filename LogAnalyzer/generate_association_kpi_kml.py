@@ -26,13 +26,8 @@ pci_log = common.read_csv(PCI_LOG_PATH)
 gps_coords = common.read_csv(GPS_LOG_PATH)
 
 kpi_times = common.read_csv(KPI_TIME_PATH)
-#gps_times = pd.read_csv(DEFAULT_GPS_PATH)
 gps_times = common.read_csv(GPS_TIME_PATH)
-
 (kpi_indices, gps_indices) = time_merger.merge(kpi_times, gps_times, MERGE_MODE)
-
-# gps_indices = common.read_csv(GPS_INDICES)
-# kpi_indices = common.read_csv(KPI_INDICES)
 
 # Compare length
 if len(gps_indices) != len(kpi_indices):
@@ -42,9 +37,6 @@ if len(gps_indices) != len(kpi_indices):
 # Iterate length-1 times
 numEntries = len(gps_indices)
 kml = simplekml.Kml()
-
-# kpi_min = min(kpi_log)
-# kpi_max = max(kpi_log)
 
 kpi_min = -75
 kpi_max = -55
