@@ -20,11 +20,9 @@ object Constants {
     const val MODEM_REFRESH_COMMAND = "forceModemRefresh"
     const val MODEM_REFRESH_INTERVAL_COMMAND = "modemRefreshInterval"
     const val DEBUG_COMMAND = "debug"
-    const val COMPUTE_NODE_IP = "127.0.0.1";
     const val NR_5G_SA_LOG_STRING = "5G_NR_SA"
     const val NR_5G_NSA_LOG_STRING = "5G_NR_NSA"
     const val LTE_4G_LOG_STRING = "4G_LTE"
-    const val MEASUREMENT_PORT = 12348;
     const val COMMAND_PORT = 12345;
     const val MIN_SIG_STRENGTH_API_VERSION = 29
     const val MIN_NR_SIG_STRENGTH_API_VERSION = 29

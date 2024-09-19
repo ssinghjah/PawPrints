@@ -1,13 +1,17 @@
+import warnings
+warnings.filterwarnings("ignore")
+
 import csv
 import settings
 import enums
 from datetime import datetime
 import matplotlib.pyplot as plt
 import math
+import pyproj
 import numpy as np
 
-import warnings
-warnings.filterwarnings("ignore")
+
+M_TO_DEGREE = 1/111000
 
 def get_kpi_type(kpi):
     import json
@@ -19,9 +23,18 @@ def get_kpi_type(kpi):
                 type = KPI_DEFINITIONS[technology][kpi]["type"]
         return type
 
+def rotate_polygon(polygon, pivot, yaw, pitch, roll):
+    yaw_axis = (0,0,10) # yaw axis points up
+    rotated_polygon = []
+    for pt in polygon:
+        rotated_pt = rotate_point_3d(pt, yaw_axis, yaw, pivot)
+        rotated_polygon.append(rotated_pt)
+    return rotated_polygon
 
-def create_3D_vec(start, end):
+def create_3D_vec(start, end, normalize=False):
     vec = (end[0] - start[0], end[1] - start[1], end[2] - start[2])
+    if normalize:
+        vec = normalize_vec(vec)
     return vec
 
 def dot_prod(vec1, vec2):
@@ -94,6 +107,21 @@ def read_csv(csv_path):
                 rows.append(try_float_convert(row[0]))
     return rows
 
+def normalize_vec(vec):
+    return vec/ np.sqrt(np.dot(vec,vec))
+
+def move_ecef_point_along_vec(point_ecef, vec, dist):
+    norm_vec = normalize_vec(vec)
+    translated_vec = []
+    for dimension in range(len(vec)):
+        translated_vec.append(point_ecef[dimension] + vec[dimension]*dist)
+    return translated_vec
+
+def lla_distance(lla1, lla2):
+    ecef1 = lla_to_ecef(lla1)
+    ecef2 = lla_to_ecef(lla2)
+    return point_dist_3D(ecef1, ecef2)
+
 def lla_to_ecef(lla):
     # Convert latitude and longitude to radians
     lat_rad = math.radians(lla[0])
@@ -114,7 +142,55 @@ def lla_to_ecef(lla):
     Z = (N * (1 - e2) + lla[2]) * math.sin(lat_rad)
     return [X, Y, Z]
 
+from scipy.spatial.transform import Rotation
 
+
+def create_ref_directed_poly(center_lla, size):
+    rect_south_west = (center_lla[0] - 0.25*size*M_TO_DEGREE, center_lla[1] - 0.25*size*M_TO_DEGREE, center_lla[2])
+    rect_south_east = (center_lla[0] - 0.25*size*M_TO_DEGREE, center_lla[1] + 0.25*size*M_TO_DEGREE, center_lla[2])
+    rect_north_west = (center_lla[0] + 0.25*size*M_TO_DEGREE, center_lla[1] - 0.25*size*M_TO_DEGREE, center_lla[2])
+    rect_north_east = (center_lla[0] + 0.25*size*M_TO_DEGREE, center_lla[1] + 0.25*size*M_TO_DEGREE, center_lla[2])
+    tip_north =  (center_lla[0] + 0.75*size*M_TO_DEGREE, center_lla[1], center_lla[2])
+    return [tip_north, rect_north_east, rect_south_east, rect_south_west, rect_north_west, tip_north]
+
+
+"""
+Rotate a point in 3D space about an axis centered at a given point.
+
+:param point: The point to rotate 
+:param axis: The axis of rotation 
+:param angle: The angle of rotation in radians
+:param pivot: The pivot of rotation 
+:return: The rotated point as a numpy array
+"""
+def rotate_point_3d(point, axis, angle, pivot):
+    # Convert inputs to numpy arrays
+    point = np.array(point)
+    axis = np.array(axis)
+    pivot = np.array(pivot)
+    
+    # Normalize the axis vector
+    axis = axis / np.linalg.norm(axis)
+    
+    # Translate point to origin
+    translated = point - pivot
+    
+    # Rotation matrix components
+    c = np.cos(angle)
+    s = np.sin(angle)
+    t = 1 - c
+    x, y, z = axis
+    
+    # Compute the rotation matrix
+    rotation_matrix = np.array([
+        [t*x*x + c,    t*x*y - z*s,  t*x*z + y*s],
+        [t*x*y + z*s,  t*y*y + c,    t*y*z - x*s],
+        [t*x*z - y*s,  t*y*z + x*s,  t*z*z + c]
+    ])
+    
+    # Apply rotation and translate back
+    rotated = np.dot(rotation_matrix, translated) + pivot
+    return rotated
 
 def point_dist_3D(p1, p2):
     dist = math.sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2))
@@ -135,6 +211,21 @@ def lineseg_dist(p, a, b):
     c = np.cross(p - a, d)
 
     return np.hypot(h, np.linalg.norm(c))
+
+import pyproj
+
+def ecef_to_lla(ecef_pt, flip_lat_lon = False):
+    ecef = pyproj.Proj(proj='geocent', ellps='WGS84', datum='WGS84')
+    lla = pyproj.Proj(proj='latlong', ellps='WGS84', datum='WGS84')
+    lon, lat, alt = pyproj.transform(ecef, lla, ecef_pt[0], ecef_pt[1], ecef_pt[2], radians=False)
+    if flip_lat_lon:
+        return [lon, lat, alt]
+    else:
+        return [lat, lon, alt]
+
+def flip_lat_lon(lla_pt):
+    return [lla_pt[1], lla_pt[0], lla_pt[2]]
+
 
 def hex_to_rgb(hex):
     rgb = []
@@ -176,6 +267,18 @@ def try_float_convert(string_input):
         except ValueError:
             return string_input
         
+
+def isNan(var):
+    return isinstance(var, (float, int)) and math.isnan(var)
+
+def format_gps_times_nemo(str_time, date = ""):
+    if date:
+        str_time = date + " " + str_time
+        
+    epoch_time =  datetime.strptime(str_time, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+    return epoch_time*1000.0
+
+
 def value_to_color(v, vmin, vmax, colormap = None):
     color = {"r": 1.0, "g": 1.0, "b":1.0} # r,g,b
 
@@ -192,12 +295,12 @@ def value_to_color(v, vmin, vmax, colormap = None):
         v = vmin
     if (v > vmax):
         v = vmax
-    dv = vmax - vmin;
+    dv = vmax - vmin
     if (v < (vmin + 0.25 * dv)):
-        color["r"] = 0;
-        color["g"] = 4 * (v - vmin) /dv;
+        color["r"] = 0
+        color["g"] = 4 * (v - vmin) /dv
     elif (v < (vmin + 0.5 * dv)):
-        color["r"] = 0;
+        color["r"] = 0
         color["b"] = 1 + 4 * (vmin + 0.25 * dv - v) / dv
     elif (v < (vmin + 0.75 * dv)):
         color["r"] = 4 * (v - vmin - 0.5 * dv) / dv

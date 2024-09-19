@@ -22,9 +22,7 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
     private var asu: Int =  Int.MIN_VALUE
     private var cqi: Int =  Int.MIN_VALUE
     private var level: Int =  Int.MIN_VALUE
-
     private var cellIdentity: Int = Int.MIN_VALUE
-
     private var bands: ArrayList<Int> = ArrayList()
     private var earfcn: String = ""
     private var pci: String = ""
@@ -343,7 +341,7 @@ class LTEInfo(cellInfo:CellInfoLte, refTime: Long) {
         jsonObject.put("level", this.level)
         jsonObject.put("bandwidth", this.bandwidth)
         jsonObject.put("bands", this.bands)
-        jsonObject.put("modes", this.get_modes(this.\bands))
+        jsonObject.put("modes", this.get_modes(this.bands))
         jsonObject.put("bands_description", this.band_num_to_description(this.bands))
         jsonObject.put("mcc", this.mcc)
         jsonObject.put("mnc", this.mnc)

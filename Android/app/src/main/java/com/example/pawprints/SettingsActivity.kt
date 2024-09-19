@@ -21,7 +21,6 @@ class SettingsActivity : AppCompatActivity() {
         }
         catch (t:Throwable){
         }
-
     }
 
     class SettingsFragment : PreferenceFragmentCompat() {

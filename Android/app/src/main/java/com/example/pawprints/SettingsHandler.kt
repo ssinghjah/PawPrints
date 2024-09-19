@@ -31,6 +31,8 @@ object SettingsHandler{
     var LTE_Log_PCI:Boolean = true
     var LTE_Log_CI:Boolean = true
     var LTE_Log_TA:Boolean = true
+    var Companion_IP: String = "127.0.0.1"
+    var Companion_Port:Int = 12348
 
     fun updateSettingsFromCommand(command:String, prefManager:SharedPreferences):Boolean
     {
@@ -102,11 +104,14 @@ object SettingsHandler{
         LogGPS = sp.getBoolean("pref_bLogGPS", false)
         Debug = sp.getBoolean("pref_bDebug", false)
         Device_Name = sp.getString("pref_sDeviceName", "").toString()
-       try
+        Companion_IP = sp.getString("pref_companionIP", "").toString()
+        try
        {
             LogInterval = sp.getString("pref_iLogInterval", "1000")!!.toLong()
             ModemRefreshInterval = sp.getString("pref_iModemRefreshInterval", "1000")!!.toLong()
             UIRefreshInterval = sp.getString("pref_iUIRefreshInterval", "1000")!!.toLong()
+            Companion_Port = sp.getString("pref_companionPort", "")!!.toInt()
+
        }
        catch(t:Throwable)
        {

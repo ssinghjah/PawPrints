@@ -45,6 +45,8 @@ class CellMeasurementsHandler {
                val cellJSON = getCellInfo(cell, settings, stringFormat, startNanoSec)
                 cellsJSON.put(cellJSON)
             }
+            val nrSigCellInfo = getNRSigStrengthInfo(telephonyManager, "json")
+            logLineJSON.put("nr_signal_strength", nrSigCellInfo)
             logLineJSON.put("connected_pci", connected_pci)
             logLineJSON.put("cells", cellsJSON)
             return logLineJSON.toString()

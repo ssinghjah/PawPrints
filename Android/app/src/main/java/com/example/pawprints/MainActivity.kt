@@ -17,24 +17,25 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import com.example.myapplication.Constants.COMMAND_DELIM
-import com.example.myapplication.Constants.COMPUTE_NODE_IP
 import com.example.myapplication.Constants.GPS_LOG_START_MARKER
 import com.example.myapplication.Constants.GPS_LOG_STOP_MARKER
 import com.example.myapplication.Constants.LOG_FOLDER_NAME
 import com.example.myapplication.Constants.LOG_START_DELIM
-import com.example.myapplication.Constants.MEASUREMENT_PORT
 import com.example.myapplication.Constants.START_COMMAND
 import com.example.myapplication.Constants.STOP_COMMAND
 import com.example.myapplication.Constants.UPDATE_SETTINGS_COMMAND
+import com.example.myapplication.ControlLink
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.OnTokenCanceledListener
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
 import java.net.Socket
 import kotlin.concurrent.thread
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity(), MessageListener {
     private val mHandler =  Handler();
@@ -42,13 +43,15 @@ class MainActivity : AppCompatActivity(), MessageListener {
     private val mModemRefreshHandler =  Handler();
     private var mMeasurementCampaignName = System.currentTimeMillis().toString();
     private var mLogHandler = LogsHandler(LOG_FOLDER_NAME)
-
     private var mDebugLogFile = System.currentTimeMillis().toString();
     private var mIsRunning = false;
     private var mExpStartElapsedNanoSec: Long = -1;
     private var mMeasurementSocket = Socket();
+    private var mControlLink: ControlLink? = null;
     private var mIMEI = ""
     private var mTelephonyManager: TelephonyManager? =  null;
+//    private var COMPUTE_NODE_IP: String = ""
+//    private var MEASUREMENT_PORT: Int = -1
 
     // Permissions
     private var mStorageWritePermission = false;
@@ -62,14 +65,19 @@ class MainActivity : AppCompatActivity(), MessageListener {
         {
             if(this.mMeasurementSocket.isClosed() || !this.mMeasurementSocket.isConnected)
             {
-                this.mMeasurementSocket = Socket(COMPUTE_NODE_IP, MEASUREMENT_PORT)
+                this.mMeasurementSocket = Socket(SettingsHandler.Companion_IP, SettingsHandler.Companion_Port)
             }
             this.mMeasurementSocket.outputStream?.write(messageString.toByteArray())
             this.mMeasurementSocket.outputStream?.flush()
         }
         catch(t:Throwable)
         {
-            mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile, t.toString())
+            // mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile, t.toString())
+            if (t.message == "Broken pipe"){
+                // The companion closed its socket. Close PawPrint's socket as well, so that the connection can be retried.
+                this.mMeasurementSocket.close()
+            }
+
         }
     }
 
@@ -122,6 +130,19 @@ class MainActivity : AppCompatActivity(), MessageListener {
         updatePermissions()
     }
 
+    private fun createControlLink()
+    {
+        val url = "wss://127.0.0.1:8080"
+        this.mControlLink  = ControlLink(url)
+        this.mControlLink?.connect()
+
+        // Send a message
+        // tlsServerWebSocket.sendMessage("Hello, server!")
+
+        // Disconnect
+        // tlsServerWebSocket.disconnect()
+    }
+
     private fun startCommandServer()
     {
         try {
@@ -165,6 +186,20 @@ class MainActivity : AppCompatActivity(), MessageListener {
             mLogHandler.appendToDebug(mStorageWritePermission, mDebugLogFile, t.toString())
             //startCommandServer()
         }
+    }
+
+    fun getRandomString(string_length:Int): String {
+        val allowedChars = ('A'..'Z') + ('a'..'z') + ('0'..'9')
+        var string = ""
+        for (i in (1..string_length)) {
+            string += allowedChars[(Math.random() * (allowedChars.size - 1)).roundToInt()]
+        }
+        return string
+    }
+
+    private fun createRandomString(){
+
+
     }
 
     private val mCaptureMeasurements: Runnable = object : Runnable {
@@ -300,17 +335,35 @@ class MainActivity : AppCompatActivity(), MessageListener {
             override fun isCancellationRequested() = false
         }).addOnSuccessListener { location: Location? ->
             if (location == null)
-                Toast.makeText(this, "Cannot get location.", Toast.LENGTH_SHORT).show()
+            //                Toast.makeText(this, "Cannot get location.", Toast.LENGTH_SHORT).show()
             else
             {
                 val fixElapsedNanoSec = (location.elapsedRealtimeNanos - mExpStartElapsedNanoSec)/Math.pow(10.0, 9.0);
                 val nowElapsed = (SystemClock.elapsedRealtimeNanos() - mExpStartElapsedNanoSec)/Math.pow(10.0, 9.0)
-                val gpsLog = GPS_LOG_START_MARKER + ","  + nowElapsed.toString() +  "," + fixElapsedNanoSec.toString() + "," + location.latitude.toString() + "," + location.longitude.toString() + "," + location.altitude.toString() + "," +  location.accuracy.toString() + "," + GPS_LOG_STOP_MARKER
-                mLogHandler.appendToLocation(mStorageWritePermission, mMeasurementCampaignName, gpsLog)
-                streamToComputeNode(mMeasurementCampaignName + "_GPS" + LOG_START_DELIM + gpsLog)
+
+                val gpsJSON =  JSONObject()
+                gpsJSON.put("device_name", SettingsHandler.Device_Name)
+                gpsJSON.put("campaign_name", mMeasurementCampaignName)
+                gpsJSON.put("abs_time", System.currentTimeMillis())
+                gpsJSON.put("rel_time", nowElapsed)
+                gpsJSON.put("rel_fix_time", fixElapsedNanoSec)
+                gpsJSON.put("latitude", location.latitude)
+                gpsJSON.put("longitude", location.longitude)
+                gpsJSON.put("altitude", location.altitude)
+                gpsJSON.put("accuracy", location.accuracy)
+                gpsJSON.put("hasBearing", location.hasBearing())
+                gpsJSON.put("bearing", location.bearing)
+                gpsJSON.put("hasSpeed", location.hasSpeed())
+                gpsJSON.put("speed", location.speed)
+                gpsJSON.put("hasSpeedAccuracy", location.hasSpeedAccuracy())
+                gpsJSON.put("speedAccuracy", location.speedAccuracyMetersPerSecond)
+                gpsJSON.put("hasBearingAccuracy", location.hasBearingAccuracy())
+                gpsJSON.put("bearingAccuracy", location.bearingAccuracyDegrees)
+
+                mLogHandler.appendToLocation(mStorageWritePermission, mMeasurementCampaignName, gpsJSON.toString())
                 if (SettingsHandler.StreamToComputeNode) {
                     thread {
-                        streamToComputeNode(mMeasurementCampaignName + "_GPS" + LOG_START_DELIM + gpsLog)
+                        streamToComputeNode(gpsJSON.toString())
                     }
                 }
             }
@@ -331,6 +384,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
 
     private fun start(){
         try {
+            //            createControlLink()
             updatePermissions()
             requestPermissions()
             mNetworkTypeListener.registerListener(this.mTelephonyManager!!)
@@ -342,7 +396,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
                 {
                     mMeasurementCampaignName =  System.currentTimeMillis().toString();
                 }
-                editText.focusable = View.NOT_FOCUSABLE;
+            //                editText.focusable = View.NOT_FOCUSABLE;
 
             mIsRunning = true
             mExpStartElapsedNanoSec = SystemClock.elapsedRealtimeNanos();
@@ -358,7 +412,6 @@ class MainActivity : AppCompatActivity(), MessageListener {
                     }
                 }
             }
-                //val iperfResults= IperfRunner().execute("iperf.stealth.net", "-p5201", "-t3");
 
             kotlin.run {
                 mUIHandler.postDelayed(mDisplayMeasurements, SettingsHandler.UIRefreshInterval);
@@ -376,7 +429,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
         runOnUiThread({
             val startBtn: Button = findViewById(R.id.startBtn)
             val editText: EditText = findViewById(R.id.campaignName)
-            editText.focusable = View.FOCUSABLE
+//            editText.focusable = View.FOCUSABLE
             editText.setText("")
             editText.hint = "Experiment Name"
             mIsRunning = false
@@ -431,8 +484,6 @@ class MainActivity : AppCompatActivity(), MessageListener {
         }
     }
 
-
-
     override fun onConnectSuccess()
     {
     }
@@ -443,10 +494,7 @@ class MainActivity : AppCompatActivity(), MessageListener {
 
     override fun onClose()
     {
-        if(this.mMeasurementSocket != null)
-        {
-            this.mMeasurementSocket.close()
-        }
+
     }
 
     override fun onMessage(text: String?) {
@@ -454,5 +502,10 @@ class MainActivity : AppCompatActivity(), MessageListener {
 
     override fun onDestroy() {
         super .onDestroy ()
+        this.mControlLink?.disconnect()
+//        if(this.mMeasurementSocket != null)
+//        {
+//            this.mMeasurementSocket.close()
+//        }
     }
 }
