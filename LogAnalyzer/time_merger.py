@@ -12,24 +12,6 @@ GPS_TIMES = "./WorkSpace/gps_abs_time.csv"
 TIME_STEP = 1000 # In milliseconds
 MODE = 1 # Mode = 1, use first source as reference, Mode = 2: use second source as reference. Mode = 0: use a third reference time scale, give start, end and interval
 
-def interpolate_time_log_third_ref(start_time, end_time, time_log):
-    interpolated_indices = []
-    curr_index = 0
-    for ref_time in range(start_time, end_time, TIME_STEP):
-        # Time increases monotonically. So, step towards the ref time, until the next time is farther from the target, rather than the current time.
-        index_found = False
-        while not index_found:
-            if curr_index == len(time_log) - 1:
-                break
-            curr_time = time_log[curr_index]
-            next_time = time_log[curr_index + 1]
-            if abs(curr_time - ref_time) < abs(next_time - ref_time):
-                index_found = True
-                break
-            curr_index += 1
-        interpolated_indices.append(int(curr_index))
-    return interpolated_indices
-
 def interpolate_time_log(source_log, time_log, bIntersect):
     if bIntersect:
             intersectTimeLogs(source_log, time_log)
@@ -67,7 +49,43 @@ def merge_csv(df1, df2, timeIndex1, timeIndex2, bIntersect=False, mode = MODE, t
     for column_name in df2.columns: 
         df1[column_name] = df2.iloc[indices2][column_name].to_list()
      
-def merge(cell_times, gps_times, bIntersect=False, mode = MODE, to_csv = False):
+def merge_locs(cell_times, gps_times, gps_lat, gps_lon, gps_alt):
+    len_cell_times = len(cell_times)
+    interpolated_loc = {"time": cell_times, 
+                       "longitude": [None]*len_cell_times, 
+                       "latitude": [None]*len_cell_times, 
+                       "altitude":[None]*len_cell_times}
+    
+    start_index = 0
+    end_index = len_cell_times
+
+    len_gps_times = len(gps_times)
+
+    for cell_index, t in enumerate(cell_times):
+        if gps_times[0] < t:
+            start_index = cell_index
+            break
+
+    for cell_index, t in enumerate(reversed(cell_times)):
+        if  gps_times[-1] > t:
+            end_index = cell_index
+    
+    gps_index_curr = 0
+    for cell_index in range(start_index, end_index):
+        for gps_index in range(gps_index_curr, len_gps_times):
+            if gps_times[gps_index] > cell_times[cell_index]:
+                gps_index_curr = gps_index
+                interp_ratio = (cell_times[cell_index] - gps_times[gps_index - 1]) / (gps_times[gps_index] - gps_times[gps_index-1])
+                interpolated_loc["latitude"][cell_index] = gps_lat[gps_index - 1] + interp_ratio*(gps_lat[gps_index] - gps_lat[gps_index - 1])
+                interpolated_loc["longitude"][cell_index] = gps_lon[gps_index - 1] + interp_ratio*(gps_lon[gps_index] - gps_lon[gps_index - 1])
+                interpolated_loc["altitude"][cell_index] = gps_alt[gps_index - 1] + interp_ratio*(gps_alt[gps_index] - gps_alt[gps_index - 1])
+                break
+
+    return interpolated_loc
+
+
+
+def merge(cell_times, gps_times, bIntersect=False, mode = MODE, to_csv = False, gps_df = None):
     cell_merged_time_indices = []
     gps_merged_time_indices = []
     

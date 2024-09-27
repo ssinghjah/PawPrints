@@ -3,23 +3,26 @@ import matplotlib as mpl
 import common
 import numpy as np
 
+# Settings
+
+FONT_SIZE = 18
 font = {'family' : 'normal',
         'weight' : 'bold',
-        'size'   : 30}
+        'size'   : FONT_SIZE}
 
-V_MIN = 0
-V_MAX = 10
-DECIMAL_STEPS = 5
-TICK_STEP = 2.5
+LABEL_PAD = 15
+TICK_ROTATION = 90
+V_MIN = 200 # KPI MIN
+V_MAX = 750  # KPI MAX
+DECIMAL_STEPS = 0.5 # Used to interpolate color between V_MIN and V_MAX
+TICK_STEP = 50 # KPI Steps
 MY_MAP = "jet"
-LABEL = "RSSI (dBm)"
-FONT_SIZE = 34
-
+LABEL = "PDCP throughput (Mbps)" # Color bar label
 cmap = MY_MAP
+
+# Execution
 if MY_MAP == "custom":
     rgbs = []
-    # mpl.rcParams.update({'font.size': 25})
-
     for v in range(V_MIN, V_MAX):
         for i in range(DECIMAL_STEPS):        
             color = common.rgb_to_hex(common.value_to_color(v + i / DECIMAL_STEPS, V_MIN, V_MAX))
@@ -32,15 +35,11 @@ fig.subplots_adjust(right=0.5)
 
 norm = mpl.colors.Normalize(vmin=V_MIN, vmax=V_MAX)
 
-# my_map = "YlGn"
-# # my_map = "autumn"
-
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
                                 norm=norm,
                                 orientation='vertical', location='right')
-cb1.set_label(LABEL, fontsize = FONT_SIZE-2, labelpad=30)
-cb1.set_ticks(np.arange(V_MIN, V_MAX, DECIMAL_STEPS))
-cb1.ax.tick_params(labelsize=FONT_SIZE) 
+cb1.set_label(LABEL, fontsize = FONT_SIZE, labelpad=15)
+cb1.ax.tick_params(labelsize=FONT_SIZE, rotation=TICK_ROTATION) 
 
 ticks = [V_MIN]
 for v_tick in np.arange(V_MIN + TICK_STEP, V_MAX, TICK_STEP):
@@ -48,8 +47,6 @@ for v_tick in np.arange(V_MIN + TICK_STEP, V_MAX, TICK_STEP):
 ticks.append(V_MAX)
 
 cb1.set_ticks(ticks)
-# plt.rcParams.update({'font.size', 20})
 mpl.rc('font', **font)
-# cb1.set_ticks([-79, -75, -70, -65, -60, -55, -51])
 fig.show()
 plt.show()

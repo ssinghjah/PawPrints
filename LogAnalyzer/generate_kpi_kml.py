@@ -316,6 +316,7 @@ if __name__ == "__main__":
     parser.add_argument('--pci-col', type=str, default=DEFAULT_PCI_COL_NAME, help= "PCI Column name.")   
     parser.add_argument('--custom-label', type=str, default=None, help= "A custom text to add to the pop-up label, at all data points.")   
     parser.add_argument('--labels', nargs='+', default=[], help= "Fields to display in the pop-up label. Please also provide --label-units along with --labels.")   
+    parser.add_argument('--log-type', nargs='+', default=DEFAULT_LOG_TYPE, help= "Input CSV log type.")   
     parser.add_argument('--label-units', nargs='+', default=[], help= "Units of the fields to display in the pop-up label.")   
     parser.add_argument('--filters', type=str,)
     options = parser.parse_args()

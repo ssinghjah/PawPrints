@@ -25,10 +25,22 @@ def get_kpi_type(kpi):
 
 def rotate_polygon(polygon, pivot, yaw, pitch, roll):
     yaw_axis = (0,0,10) # yaw axis points up
+    pitch_axis = (0, 10, 0)
+    roll_axis = (10, 0, 0)
     rotated_polygon = []
+
     for pt in polygon:
         rotated_pt = rotate_point_3d(pt, yaw_axis, yaw, pivot)
         rotated_polygon.append(rotated_pt)
+
+    # for pt in polygon:
+    #     rotated_pt = rotate_point_3d(pt, pitch_axis, pitch, pivot)
+    #     rotated_polygon.append(rotated_pt)
+
+    # for pt in rotated_polygon:
+    #     rotated_pt = rotate_point_3d(pt, roll_axis, roll, pivot)
+    #     rotated_polygon.append(rotated_pt)
+
     return rotated_polygon
 
 def create_3D_vec(start, end, normalize=False):
@@ -144,7 +156,9 @@ def lla_to_ecef(lla):
 
 from scipy.spatial.transform import Rotation
 
-
+# Optional: Draw a line from center to the ground. Document the diagram, showing how the marker is created, with dimensions.
+# Optional: rectange at the center of the marker?
+# https://discuss.ardupilot.org/t/rotation-order-in-ardupilots-aeronautical-frame/80978
 def create_ref_directed_poly(center_lla, size):
     rect_south_west = (center_lla[0] - 0.25*size*M_TO_DEGREE, center_lla[1] - 0.25*size*M_TO_DEGREE, center_lla[2])
     rect_south_east = (center_lla[0] - 0.25*size*M_TO_DEGREE, center_lla[1] + 0.25*size*M_TO_DEGREE, center_lla[2])
@@ -172,7 +186,7 @@ def rotate_point_3d(point, axis, angle, pivot):
     # Normalize the axis vector
     axis = axis / np.linalg.norm(axis)
     
-    # Translate point to origin
+    # Get vector from pivot to the point
     translated = point - pivot
     
     # Rotation matrix components
