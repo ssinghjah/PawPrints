@@ -7,7 +7,6 @@ import pandas
 import argparse
 import time_merger
 from datetime import datetime
-import process_gps_log
 import numpy as np
 import toml
 import process_iperf_log
