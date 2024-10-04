@@ -1,10 +1,16 @@
 import os
+
+################
+# This section is to be changed by the user for each run
 ROOT = "~/Work/AERPAW/ExperimentData/srsRANvenue_Oct_2/"
 
 SESSION_PREFIXES = ["Inside_srsRANvenue",
                "To_srsRANvenue",
                "From_srsRANvenue"]
 
+########################
+
+## User is not required to change the below code/settings
 WIFI_SUFFIX = "_wifi_log.txt"
 CELL_SUFFIX = "_log.txt"
 POS_SUFFIX = "_location.txt"
