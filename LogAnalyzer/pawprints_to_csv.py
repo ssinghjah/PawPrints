@@ -13,7 +13,7 @@ import process_iperf_log
 # import pawprints_gps_to_csv
 # -i ~/Work/AERPAW/ExperimentData/NCSU_Sep_18_2024/wifi.txt -o ~/Work/AERPAW/ExperimentData/NCSU_Sep_18_2024/
 
-OUTPUT_FOLDER = "../../ExperimentData/April_15_2024_Lake_Wheeler/"
+OUTPUT_FOLDER = "./"
 GPS_LAT_INDEX = 1
 GPS_LON_INDEX = 2
 
@@ -51,7 +51,7 @@ def process_wifi_row(log_row, data, options):
         panda_ap = ap.copy()
         panda_ap["phone_abs_time"] = log_row["abs_time"]
         panda_ap["rel_time"] = log_row["rel_time"]    
-        panda_ap["is_connected"] = 0 if ("connected_network_id" not in log_row or log_row["connected_bssid"] != ap["bssid"]) else 1 
+        panda_ap["is_connected"] = 1 if ("connected_bssid" in log_row and log_row["connected_bssid"] == ap["bssid"]) else 0
         panda_ap["connected_rssi"] = np.nan if "connected_rssi" not in log_row else log_row["connected_rssi"]
         panda_ap["connected_link_speed"] = np.nan if "connected_link_speed" not in log_row else log_row["connected_link_speed"]
         panda_ap["connected_bssid"] = " " if "connected_bssid" not in log_row else log_row["connected_bssid"]
@@ -72,8 +72,9 @@ def process_wifi_row(log_row, data, options):
         else:
             panda_ap["time_readable"] = common.epoch_ms_to_readable(panda_ap["phone_abs_time"])
 
-        pandas.DataFrame(panda_ap, index=[0]).to_csv(os.path.join(options.output, "wifi.csv"), mode="a", header=False, index=False)
-        pandas.DataFrame(panda_ap.keys()).to_csv(os.path.join(options.output, "wifi_headers.csv"), mode="w", header=True, index=False)
+        data["wifi_info"] = pandas.concat([data["wifi_info"], pandas.DataFrame(panda_ap, index = [0])], ignore_index = True)
+        # pandas.DataFrame(panda_ap, index=[0]).to_csv(os.path.join(options.output_dir, options.prefix + "wifi.csv"), mode="a", header=False, index=False)
+        # pandas.DataFrame(panda_ap.keys()).to_csv(os.path.join(options.output_dir, options.prefix + "wifi_headers.csv"), mode="w", header=True, index=False)
         
     
 def process_log_row(log_row, data, options):
@@ -105,9 +106,9 @@ def process_log_row(log_row, data, options):
                 cell_index += 1
 
             # Write connected cell logs
-            append_to_csv(get_csv_kpi_path("connected", "pci", options.output), connected_pci)
-            append_to_csv(get_csv_kpi_path("connected", "abs_time", options.output), abs_time)
-            append_to_csv(get_csv_kpi_path("connected","rel_time", options.output), rel_time)
+            append_to_csv(get_csv_kpi_path("connected", "pci", options.output_dir), connected_pci)
+            append_to_csv(get_csv_kpi_path("connected", "abs_time", options.output_dir), abs_time)
+            append_to_csv(get_csv_kpi_path("connected","rel_time", options.output_dir), rel_time)
             # connected_index = 0
             #connected_index = log_row["connected_index"]
             if connected_pci != -1:
@@ -145,12 +146,12 @@ def process_log_row(log_row, data, options):
                 else:
                     panda_cell["time_readable"] = common.epoch_ms_to_readable(panda_cell["phone_abs_time"])
    
-                #data['nr_signal_strength'] = pandas.concat([data["nr_signal_strength"], pandas.DataFrame(panda_cell, index =[0])], ignore_index = True)
+                data['nr_signal_strength'] = pandas.concat([data["nr_signal_strength"], pandas.DataFrame(panda_cell, index =[0])], ignore_index = True)
                 # Add companion and phone time
 
-                pandas.DataFrame(panda_cell, index=[0]).to_csv(os.path.join(options.output, "nr_signal_strength.csv"), mode="a", header= False, index=False)
-                pandas.DataFrame(panda_cell.keys()).to_csv(os.path.join(options.output, "nr_signal_strength_headers.csv"), mode="w", header= True, index=False)
-
+                # pandas.DataFrame(panda_cell, index=[0]).to_csv(os.path.join(options.output_dir, options.prefix + "nr_signal_strength.csv"), mode="a", header= False, index=False)
+                # pandas.DataFrame(panda_cell.keys()).to_csv(os.path.join(options.output_dir, options.prefix + "nr_signal_strength_headers.csv"), mode="w", header= True, index=False)
+                
             for cell in log_row["cells"]:
                 panda_cell = cell.copy()
                 panda_cell["phone_abs_time"] = log_row["abs_time"]
@@ -165,18 +166,16 @@ def process_log_row(log_row, data, options):
                 else:
                     panda_cell["time_readable"] = common.epoch_ms_to_readable(panda_cell["phone_abs_time"])
 
-            
-
-                #data["cell_info"] = pandas.concat([data["cell_info"], pandas.DataFrame(panda_cell, index = [0])], ignore_index = True)
-
-                pandas.DataFrame(panda_cell, index=[0]).to_csv(os.path.join(options.output, "cellular.csv"), mode="a", header=False, index=False)
-                pandas.DataFrame(panda_cell.keys()).to_csv(os.path.join(options.output, "cellular_headers.csv"), mode="w", header=True, index=False)
+                data["cell_info"] = pandas.concat([data["cell_info"], pandas.DataFrame(panda_cell, index = [0])], ignore_index = True)
+                # pandas.DataFrame(panda_cell, index=[0]).to_csv(os.path.join(options.output_dir, options.prefix + "cellular.csv"), mode="a", header=False, index=False)
+                # pandas.DataFrame(panda_cell.keys()).to_csv(os.path.join(options.output_dir, options.prefix + "cellular_headers.csv"), mode="w", header=True, index=False)        
         
         # Write metadata about seen cells
         seen_pcis = []
         for cell in log_row["cells"]:
             seen_pcis.append(cell["pci"])
-        append_to_csv(os.path.join(options.output, 'seen_pci.csv'), seen_pcis)
+        append_to_csv(os.path.join(options.output_dir, 'seen_pci.csv'), seen_pcis)
+
 
     elif log_row["type"] == "wifi":
         process_wifi_row(log_row,data, options)
@@ -195,6 +194,13 @@ def clean_up_old_logs(output_folder):
 def format_gps_times(str_time):
     epoch_time =  datetime.strptime(str_time, '%Y-%m-%d %H:%M:%S.%f').timestamp()
     return epoch_time*1000.0
+
+def preprend_header(options, log_type):
+    data = pandas.read_csv(os.path.join(options.outputdir, options.prefix + log_type + ".csv"), index_col=False)
+    headers = pandas.read_csv(os.path.join(options.outputdir, options.prefix + log_type + "_headers.csv"), index_col=False)
+    data.columns = headers
+    data.to_csv(os.path.join(options.outputdir, options.prefix + log_type + ".csv"), index=False)
+
 
 def merge_logs(data, options, config):
     bMergeGPS = options.gps_log is not None
@@ -266,7 +272,7 @@ def merge_logs(data, options, config):
         
         # Write Iperf to CSV
         iperf_data_pd = pandas.DataFrame(iperf_data)
-        output_path = os.path.join(options.output, "iperf_client.csv")
+        output_path = os.path.join(options.output_dir, options.prefix + "iperf_client.csv")
         print("Writing to " + output_path)
         iperf_data_pd.to_csv(output_path,  index=False)
 
@@ -278,20 +284,29 @@ def to_sql(data):
     pass
 
 
+def _write_csv(data, log_type, options):
+    if log_type in data and not data[log_type].empty:
+        output_path = os.path.join(options.output_dir, options.prefix + log_type + ".csv")
+        print("Writing to " + output_path)
+        data[log_type].to_csv(output_path, index=False)
+
+
 def process_log(options, config):
-    clean_up_old_logs(options.output)
+    clean_up_old_logs(options.output_dir)
     handover_count = 0
     
     data = {}
     if options.mergemode== "all":
         data["cell_info"] = pandas.DataFrame(index=None)
         data["nr_signal_strength"] = pandas.DataFrame(index=None)
+        data["wifi_info"] = pandas.DataFrame(index=None)
+
     
     with open(options.input) as f:
         log_rows = f.readlines()
         num_lines = len(log_rows)
         row_num = 0
-        for log_row_string in log_rows:
+        for index, log_row_string in enumerate(log_rows):
            print(f'{row_num + 1}/{num_lines}')
            row_num += 1
            log_row = json.loads(log_row_string)
@@ -299,15 +314,11 @@ def process_log(options, config):
 
     # merge_logs(data, options, config)
     
-    # if options.output_format == "csv" and options.mergemode == "all":
-    #     output_path = os.path.join(options.output, "pawprints_all.csv")
-    #     print("Writing to " + output_path)
-    #     data["cell_info"].to_csv(output_path, index=False)
-        
-    #     if not data["nr_signal_strength"].empty:
-    #         output_path = os.path.join(options.output, "pawprints_5G_signal_strength.csv")
-    #         print("Writing to " + output_path)
-    #         data["nr_signal_strength"].to_csv(output_path, index=False)
+    if options.output_format == "csv" and options.mergemode == "all":
+        _write_csv(data, "nr_signal_strength", options)
+        _write_csv(data, "cell_info", options)
+        _write_csv(data, "wifi_info", options)
+    
     
     # if options.output_format == "csv" and options.mergemode == "per-cell-kpi":
     #     for key in data:
@@ -334,9 +345,9 @@ def main():
     parser.add_argument('-i', '--input', type = str, default = PAWPRINTS_LOG_PATH, help='Input pawprints log file')
     parser.add_argument('--iperf-log', type = str, default = None, help='Path to iperf client log file')
     parser.add_argument('-g', '--gps-log', type = str, default = None, help='GPS log file')
-    parser.add_argument('-p', '--csvprefix', type=str, default=OUTPUT_CSV_PREFIX, help="Prefix of the output csv file(s)")
+    parser.add_argument('-p', '--prefix', type=str, default=OUTPUT_CSV_PREFIX, help="Prefix of the output csv file(s)")
     parser.add_argument('-m', '--mergemode', type = str, default = MERGE_DEFAULT, help='Options to merge the output CSV. "all" = creates one csv containing all kpis of all cell. "per-cell-kpi" = creates multiple csvs, one for each kpi of all cell')
-    parser.add_argument('-o', '--output', type = str, default = OUTPUT_FOLDER, help='Output Folder.')
+    parser.add_argument('-o', '--output-dir', type = str, default = OUTPUT_FOLDER, help='Output Folder.')
     parser.add_argument('--output-format', type = str, default = OUTPUT_DEFAULT, help='Output options. csv or influx')
     parser.add_argument('--gps-source', type = str, default = GPS_SOURCE_TYPE_DEFAULT, help='GPS log source. companion or pawprints')
     options = parser.parse_args()
