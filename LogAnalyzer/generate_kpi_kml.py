@@ -11,19 +11,20 @@ import numpy as np
 
 # Options
 # DEFAULT_PCI = "connected"
-DEFAULT_PCI = ""
+DEFAULT_PCI = "connected"
 DEFAULT_KPI = "rsrp"
 DEFAULT_KPI_UNITS = ""
 DEFAULT_WORKFOLDER = ""
 DEFAULT_LOG_NAME = "pawprints_all.csv"
 DEFAULT_PCI_COL_NAME = "pci"
+DEFAULT_ALT_COL = "altitude"
 
 DEFAULT_LOG_TYPE = "all" # can be "per-cell-kpi" or "all"
 DEFAULT_MERGE_MODE = 1 # Merge mode. 0 = use a third reference time scale. 1 = use cellular. 2 = use gps
 DRAW_TYPE = "line, point"
-LINE_WIDTH = 5
+LINE_WIDTH = 1 
 USE_PCI_MAP = False
-MARKER_WIDTH = 3
+MARKER_WIDTH = 8
 DIRECTED_MARKER_LENGTH = 5
 DIRECTED_MARKER_SCALE = 1.0
 
@@ -123,6 +124,7 @@ def generate_kml(options, additional_filters = None):
     numEntries = -1
     kpi_log = []
     gps_log = []
+
     if options.log_type == "per-cell-kpi":
         kpi_path = os.path.join(options.workarea, options.pci + "_" + options.kpi + ".csv")
         gps_path = os.path.join(options.workarea, "gps.csv")
@@ -150,9 +152,14 @@ def generate_kml(options, additional_filters = None):
     elif options.log_type == "all":
         log_path = os.path.join(options.workarea, options.input_log)
         log_pd = pd.read_csv(log_path)
+        log_pd["altitude"] = log_pd[options.alt_col]
         
         columns = ["latitude", "longitude", "altitude", options.kpi]
         columns.extend(options.labels)
+        
+        if "directed" in options.draw_type:
+            columns.extend(["roll", "pitch", "yaw", "vx", "vy", "vz"])
+
         # Filter by PCI
         if options.pci == "connected" and "is_connected" in log_pd.columns:
             # Filter rows of the connected cell
@@ -182,6 +189,8 @@ def generate_kml(options, additional_filters = None):
     kpi_min = min(kpi_gps_pd[options.kpi]) if options.kpi_min == None else options.kpi_min
     kpi_max = max(kpi_gps_pd[options.kpi]) if options.kpi_max == None else options.kpi_max
     print(kpi_min, kpi_max)
+    if kpi_min == kpi_max:
+        kpi_min = kpi_max - 1
     numRows = len(kpi_gps_pd)
 
     for i in range(numRows):
@@ -189,7 +198,6 @@ def generate_kml(options, additional_filters = None):
         lon = kpi_gps_pd.iloc[i]["longitude"]
         alt = kpi_gps_pd.iloc[i]["altitude"]
         kpi = kpi_gps_pd.iloc[i][options.kpi]
-
         if common.isNan(kpi) or common.isNan(lat) or common.isNan(lon) or common.isNan(alt):
             continue
 
@@ -243,20 +251,59 @@ def generate_kml(options, additional_filters = None):
             geom.description += f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({lat},{lon})</p><p> altitude = {alt} m</p><p> index = {i}</p>'
 
         if "directed" in options.draw_type:
-            if len(kpi_gps_pd) == i+1:
-                continue
-            next_pt = kpi_gps_pd.iloc[i+1]["latitude"], kpi_gps_pd.iloc[i+1]["longitude"], kpi_gps_pd.iloc[i+1]["altitude"]
+            yaw = kpi_gps_pd.iloc[i]["yaw"]
+            pitch = kpi_gps_pd.iloc[i]["pitch"]
+            roll = kpi_gps_pd.iloc[i]["roll"]
+            vx = kpi_gps_pd.iloc[i]["vx"]
+            vy = kpi_gps_pd.iloc[i]["vy"]
+            vz = kpi_gps_pd.iloc[i]["vz"]
+
+            center = (lat, lon, alt)
+
+            poly_rear, poly_front = common.create_ref_directed_poly(center, 25, roll = roll, pitch = pitch, yaw = yaw, split=True)     
+            poly_rear = common.flip_lat_lon_poly(poly_rear)
+            poly_front = common.flip_lat_lon_poly(poly_front)
+
             geom = kml.newpolygon()
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
-            if common.lla_distance((lat, lon, alt), next_pt) < 0.5:
-                geom.outerboundaryis = _create_kml_polygon(lat, lon, alt, MARKER_WIDTH, 4)
-            else:
-                geom.outerboundaryis = _create_kml_rect_triangle((lat, lon, alt), next_pt)
+            geom.outerboundaryis = poly_rear
             geom.style.polystyle.color = kml_color
             geom.style.linestyle.color = kml_color
             geom.style.linestyle.width = MARKER_WIDTH
             geom.description = add_labels(kpi_gps_pd.iloc[i], options.labels, options.label_units, options.custom_label)
-            geom.description += f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({lat},{lon})</p><p> altitude = {alt} m</p><p> index = {i}</p>'
+            geom.description += f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({lat},{lon})</p><p> altitude = {alt} m</p><p> index = {i}</p><p>yaw = {round(yaw*180/math.pi,2)} ° </p><p> pitch = {round(pitch*180/math.pi,2)} °</p> <p> roll = {round(roll*180/math.pi,2)} °</p><p> v_north = {round(vx,2) } m/s</p><p> v_east = {round(vy,2) } m/s</p><p> v_down = {round(vz,2) } m/s</p>'
+
+            geom = kml.newpolygon()
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.outerboundaryis = poly_front
+            geom.style.polystyle.color = kml_color
+            geom.style.linestyle.color = kml_color
+            geom.style.linestyle.width = MARKER_WIDTH
+            geom.description = add_labels(kpi_gps_pd.iloc[i], options.labels, options.label_units, options.custom_label)
+            geom.description += f'<p>{options.kpi} = {kpi} {options.kpi_units}</p><p>(lat, lon) = ({lat},{lon})</p><p> altitude = {alt} m</p><p> index = {i}</p><p>yaw = {round(yaw*180/math.pi,2)} ° </p><p> pitch = {round(pitch*180/math.pi,2)} °</p> <p> roll = {round(roll*180/math.pi,2)} °</p><p> v_north = {round(vx,2) } m/s</p><p> v_east = {round(vy,2) } m/s</p><p> v_down = {round(vz,2) } m/s</p>'            
+            
+            geom = kml.newlinestring(coords=[(lon, lat, alt+5), (lon, lat, alt+5-vz*METER_TO_DEGREE)])
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.style.linestyle.color = kml_color
+            geom.style.linestyle.width = LINE_WIDTH
+
+            eom = kml.newlinestring(coords=[(lon, lat, alt+5), (lon, lat+vx*METER_TO_DEGREE, alt+5)])
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.style.linestyle.color = kml_color/home/simran/Downloads/waste_gen_prediction.py
+            geom.style.linestyle.width = LINE_WIDTH
+
+            eom = kml.newlinestring(coords=[(lon, lat, alt+5), (lon+vy*METER_TO_DEGREE, lat, alt+5)])
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.style.linestyle.color = kml_color
+            geom.style.linestyle.width = LINE_WIDTH
+
+
+
+        if "project" in options.draw_type:
+            geom = kml.newlinestring(coords=[(lon, lat, alt), (lon, lat, 0)])
+            geom.altitudemode = simplekml.AltitudeMode.relativetoground
+            geom.style.linestyle.color = kml_color
+            geom.style.linestyle.width = LINE_WIDTH
 
         if "triangle" in options.draw_type:
             if len(kpi_gps_pd) == i+1:
@@ -317,6 +364,8 @@ if __name__ == "__main__":
     parser.add_argument('--custom-label', type=str, default=None, help= "A custom text to add to the pop-up label, at all data points.")   
     parser.add_argument('--labels', nargs='+', default=[], help= "Fields to display in the pop-up label. Please also provide --label-units along with --labels.")   
     parser.add_argument('--log-type', nargs='+', default=DEFAULT_LOG_TYPE, help= "Input CSV log type.")   
+    parser.add_argument('--alt-col', nargs='+', default=DEFAULT_ALT_COL, help= "Altitude column.")   
+
     parser.add_argument('--label-units', nargs='+', default=[], help= "Units of the fields to display in the pop-up label.")   
     parser.add_argument('--filters', type=str,)
     options = parser.parse_args()
