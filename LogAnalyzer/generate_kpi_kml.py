@@ -4,34 +4,35 @@ import common
 import simplekml
 import os
 import argparse
-import time_merger
 import pandas as pd
 import math
 import numpy as np
+import settings
 
 # Options
-# DEFAULT_PCI = "connected"
-DEFAULT_PCI = "connected"
+DEFAULT_PCI = ""
 DEFAULT_KPI = "rsrp"
 DEFAULT_KPI_UNITS = ""
 DEFAULT_WORKFOLDER = ""
 DEFAULT_LOG_NAME = "pawprints_all.csv"
 DEFAULT_PCI_COL_NAME = "pci"
 DEFAULT_ALT_COL = "altitude"
+DEFAULT_COLOR_MAP = None
 
 DEFAULT_LOG_TYPE = "all" # can be "per-cell-kpi" or "all"
-DEFAULT_MERGE_MODE = 1 # Merge mode. 0 = use a third reference time scale. 1 = use cellular. 2 = use gps
 DRAW_TYPE = "line, point"
 LINE_WIDTH = 1 
 USE_PCI_MAP = False
-MARKER_WIDTH = 8
-DIRECTED_MARKER_LENGTH = 5
+MARKER_WIDTH = 2.0   
+DIRECTED_MARKER_LENGTH = 10
 DIRECTED_MARKER_SCALE = 1.0
+
+DISCRETE_COLOR_MAP = {1: {"r": 1.0, "g": 0.2, "b": 0.2}, 2: {"r": 1.0, "g": 1.0, "b": 1.0}}
+ALTERNATE_COLORS = [{"r": 1.0, "g": 1.0, "b": 1.0}, {"r": 1.0, "g": 0.0, "b": 0.0}] 
 
 # Constants
 METER_TO_DEGREE = 1/111320.0
 
-COLOR_MAP = {1: {"r": 0, "g": 0.6, "b": 0} , 2: {"r": 1.0, "g": 0.6, "b": 0.0}}
 LON_INDEX = 1
 LAT_INDEX = 2
 GPS_ALT_INDEX = 3
@@ -44,7 +45,8 @@ def add_labels(row,  labels, label_units, custom_label):
     description += f'<p><strong>{custom_label}</strong></p>'
 
     if len(label_units) != len(labels):
-        raise Exception("Length of label units should be equal to length of labels.")
+        label_units = ["" for label in labels]
+        #raise Exception("Length of label units should be equal to length of labels.")
     
     for label,label_unit in zip(labels, label_units):
         description += f'<p>{label} = {row[label]} {label_unit}</p>'
@@ -118,7 +120,6 @@ def _create_kml_triangle(curr_pt, next_pt):
     pts.append(common.flip_lat_lon(common.ecef_to_lla(tri_left)))
     return(pts)
 
-# -i ~/Work/AERPAW/ExperimentData/July_2_2024_Flight_3/PawPrints/pawprints_all.csv -k rsrp --draw-type triangle --pci connected --custom-label PawPrints -u dBm --kpi-min -90 --kpi-max -60
 
 def generate_kml(options, additional_filters = None):
     numEntries = -1
@@ -165,7 +166,7 @@ def generate_kml(options, additional_filters = None):
             # Filter rows of the connected cell
             indices = log_pd["is_connected"] == 1
             kpi_gps_pd = log_pd.loc[indices][columns]
-        elif options.pci:
+        elif options.pci and ("pci" in log_pd or (options.pci_col and options.pci_col in log_pd)):
             # Expect latitude, longitude, and altitude to be present in the merged csv
             pci_col = "pci"
             if options.pci_col:
@@ -192,6 +193,8 @@ def generate_kml(options, additional_filters = None):
     if kpi_min == kpi_max:
         kpi_min = kpi_max - 1
     numRows = len(kpi_gps_pd)
+    if options.alternate_colors:
+        curr_color_index = 0
 
     for i in range(numRows):
         lat = kpi_gps_pd.iloc[i]["latitude"]
@@ -201,15 +204,18 @@ def generate_kml(options, additional_filters = None):
         if common.isNan(kpi) or common.isNan(lat) or common.isNan(lon) or common.isNan(alt):
             continue
 
-        if options.use_pci_colormap:
-            if kpi in COLOR_MAP:
-                color = COLOR_MAP[kpi]
+        if options.use_discrete_colormap:
+            if kpi in DISCRETE_COLOR_MAP:
+                color = DISCRETE_COLOR_MAP[kpi]
             else:
                 color = {"r": 0, "g": 0, "b": 0}
-        else:
-            color = common.value_to_color(kpi, kpi_min, kpi_max)
-
+        elif options.alternate_colors and i < (len(kpi_gps_pd) - 1):
+            if kpi != kpi_gps_pd.iloc[i+1][options.kpi]:
+                curr_color_index = 1 if curr_color_index == 0 else 0
+            color = ALTERNATE_COLORS[curr_color_index]
         
+        else:
+            color = common.value_to_color(kpi, kpi_min, kpi_max, options.colormap)
 
         kml_color = simplekml.Color.rgb(round(color["r"]*255), round(color["g"]*255), round(color["b"]*255))
 
@@ -297,8 +303,6 @@ def generate_kml(options, additional_filters = None):
             geom.style.linestyle.color = kml_color
             geom.style.linestyle.width = LINE_WIDTH
 
-
-
         if "project" in options.draw_type:
             geom = kml.newlinestring(coords=[(lon, lat, alt), (lon, lat, 0)])
             geom.altitudemode = simplekml.AltitudeMode.relativetoground
@@ -362,11 +366,14 @@ if __name__ == "__main__":
     parser.add_argument('--draw-type', type=str, default=DRAW_TYPE, help= "Draw type. Can be line or point or circle or any combination such as line,point or circle,point.")
     parser.add_argument('--pci-col', type=str, default=DEFAULT_PCI_COL_NAME, help= "PCI Column name.")   
     parser.add_argument('--custom-label', type=str, default=None, help= "A custom text to add to the pop-up label, at all data points.")   
+    parser.add_argument('--colormap', type=str, default=DEFAULT_COLOR_MAP, help= "Colormap to use for the colorbar.")   
     parser.add_argument('--labels', nargs='+', default=[], help= "Fields to display in the pop-up label. Please also provide --label-units along with --labels.")   
-    parser.add_argument('--log-type', nargs='+', default=DEFAULT_LOG_TYPE, help= "Input CSV log type.")   
+    parser.add_argument('--log-type', nargs='+',default=DEFAULT_LOG_TYPE, help= "Input CSV log type.")   
     parser.add_argument('--alt-col', nargs='+', default=DEFAULT_ALT_COL, help= "Altitude column.")   
-
-    parser.add_argument('--label-units', nargs='+', default=[], help= "Units of the fields to display in the pop-up label.")   
+    parser.add_argument('--use-discrete-colormap', action="store_true", help="Use a discrete color map, specified in the code, for KPI values")
+    parser.add_argument('--alternate-colors', action="store_true", help="Change colors when the KPI changes")
+    parser.add_argument('--label-units', nargs='+', default=[], help= "Units of the fields to display in the pop-up label.")
+    parser.add_argument('--marker-width', default=MARKER_WIDTH, help="Marker size")
     parser.add_argument('--filters', type=str,)
     options = parser.parse_args()
     generate_kml(options)
