@@ -3,9 +3,9 @@ import pandas
 import json
 import argparse
 
-def run(options):
+def run(input_file, output_file):
     gps_data = []
-    with open(options.input, "r") as fp:
+    with open(input_file, "r") as fp:
         lines = fp.readlines()
         for line in lines:
             line_obj = json.loads(line)
@@ -17,7 +17,7 @@ def run(options):
     if "speed" in gps_df.columns:
         gps_df["speed_mph"] = gps_df["speed"]*2.23694
 
-    gps_df.to_csv(options.output, index=False)
+    gps_df.to_csv(output_file, index=False)
 
 INPUT_PATH = "/home/simran/Work/Logs_AWS/AERPAW-1_motion.jsonl"
 OUTPUT_PATH = "/home/simran/Work/Logs_AWS/aerpaw-1_motion.csv"
@@ -29,5 +29,5 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input', type = str, default = INPUT_PATH, help='Input pawprints gps log file')
     parser.add_argument('-o', '--output', type = str, default = OUTPUT_PATH, help='Output gps csv path.')
     options = parser.parse_args()
-    run(options)
+    run(options.input, options.output)
 
