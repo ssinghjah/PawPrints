@@ -1,0 +1,20 @@
+[gps]
+lon_index = 1
+lat_index = 2
+alt_index = 3
+
+[kpi]
+android_unavailable = 2147483647
+rssi_unavailable = 2147483647
+rsrq_unavailable = 2147483647
+bandwidth_unavailable = 2147483647
+cqi_unavailable = 2147483647
+
+[input]
+workarea = ""
+gps_log_path = ""
+pawprints_log_path = ""
+merge_mode = "all"
+
+[output]
+output_path = ""
