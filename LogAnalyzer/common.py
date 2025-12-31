@@ -13,6 +13,18 @@ import json
 M_TO_DEGREE = 1/111000
 EARTH_RADIUS = 6371000  # in meters
 
+
+def calculate_distance_moved(source_df):
+    num_rows = source_df.shape[0]
+    dist_moved_sum = 0
+    for i in range(1, num_rows):
+        dist_moved = calculate_distance(source_df.iloc[i-1]["latitude"], source_df.iloc[i-1]["longitude"],
+                                source_df.iloc[i]["latitude"], source_df.iloc[i]["longitude"])
+        if not math.isnan(dist_moved):
+            dist_moved_sum += dist_moved
+    return dist_moved_sum
+
+
 def rotate_polygon(polygon, pivot, axis, angle):
     rotated_polygon = []
 
@@ -49,7 +61,6 @@ def interpolate_pattern(pattern, angle):
     
 
 def calculate_attenuation(horizontal_pattern, vertical_pattern, azimuth_deg, elevation_deg):
-
     h_gain = interpolate_pattern(horizontal_pattern, azimuth_deg)
     v_gain = interpolate_pattern(vertical_pattern, elevation_deg)
     
@@ -120,6 +131,21 @@ def get_closest_number_in_list(list_to_search, target_number):
         return after
     else:
         return before
+    
+
+def interpolate_in_list(dictionary_to_search, target_number):
+    key_list = list(dictionary_to_search.keys())
+    pos = bisect_left(key_list, target_number)
+    if pos == 0:
+        return dictionary_to_search[key_list[0]]
+    if pos == len(dictionary_to_search):
+        return dictionary_to_search[key_list[-1]]
+    key_before = key_list[pos - 1]
+    key_after = key_list[pos]   
+    before = dictionary_to_search[key_before]
+    after = dictionary_to_search[key_after]
+    interpolated_value = before + (after - before) * (target_number - key_before) / (key_after - key_before)
+    return interpolated_value
 
  
 def calculate_bearing(lat1, lon1, lat2, lon2):
@@ -169,8 +195,8 @@ def first_indices_greater_than(elem1, elem2, list):
             break
     return int(elem1_index), int(elem2_index)
 
-def format_gps_times(str_time):
-    epoch_time =  datetime.strptime(str_time, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+def format_gps_times(str_time, format = '%Y-%m-%d %H:%M:%S.%f'):
+    epoch_time =  datetime.strptime(str_time, format).timestamp()
     return epoch_time*1000.0
 
 def epoch_ms_to_readable(epoch_time_ms):

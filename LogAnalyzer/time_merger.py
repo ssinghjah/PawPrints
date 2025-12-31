@@ -70,7 +70,7 @@ def merge_locs(cell_times, gps_times, gps_lat, gps_lon, gps_alt):
         if  gps_times[-1] > t:
             end_index = cell_index
     
-    gps_index_curr = 0
+    gps_index_curr = 1
     for cell_index in range(start_index, end_index):
         for gps_index in range(gps_index_curr, len_gps_times):
             if gps_times[gps_index] > cell_times[cell_index]:
